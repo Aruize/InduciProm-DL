@@ -103,6 +103,8 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   margin-bottom: 16px;
   box-shadow: var(--shadow);
   transition: background 0.3s, border-color 0.3s;
+  min-width: 0;
+  overflow: hidden;
 }
 .card-title {
   font-size: 14px;
@@ -136,7 +138,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
-.seq-wrapper { position: relative; }
+.seq-wrapper { position: relative; overflow-x: auto; }
 .seq-header {
   display: flex;
   justify-content: space-between;
@@ -432,10 +434,20 @@ header-actions { display: flex; align-items: center; gap: 12px; }
 @media (max-width: 700px) {
   .results-grid { grid-template-columns: 1fr; }
   #app { padding: 12px; }
+  .seq-wrapper { overflow-x: auto; }
   .seq-line { font-size: 11px; }
   .seq-base { width: 14px; height: 18px; font-size: 11px; }
   .seq-num { width: 26px; font-size: 10px; }
   header h1 { font-size: 18px; }
+}
+@media (max-width: 480px) {
+  .seq-wrapper { overflow-x: auto; }
+  .seq-line { font-size: 9px; }
+  .seq-base { width: 11px; height: 14px; font-size: 9px; }
+  .seq-num { width: 20px; font-size: 8px; }
+  .seq-block { margin-right: 3px; }
+  .card { padding: 12px; }
+  #mutation-input { font-size: 12px; }
 }
 </style>
 </head>
