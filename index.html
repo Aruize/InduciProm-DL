@@ -466,7 +466,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
     <div class="card-title">Sequence</div>
     <div class="seq-wrapper">
       <div class="seq-header">
-        <span class="seq-label">Wild Type <span style="font-weight:400;font-size:11px;">(click a base to mutate)</span></span>
+        <span class="seq-label">Wild Type <span style="font-weight:400;font-size:11px;">(click a base to mutate or write the mutations below)</span></span>
         <button class="btn btn-secondary" id="reset-btn" style="padding:4px 10px;font-size:12px;">Reset</button>
       </div>
       <div id="wildtype-seq"></div>
@@ -480,7 +480,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
       <button class="btn btn-primary" id="apply-btn">Apply</button>
     </div>
     <div style="margin-top:6px;font-size:12px;color:var(--text-secondary);">
-      Format: <code style="background:var(--surface-alt);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);">OriginalBasePositionNewBase</code> — use 1-indexed positions. Separate multiple with commas.
+      Use 1-indexed positions. Separate multiple with commas.
     </div>
   </div>
 
@@ -773,8 +773,8 @@ function getBarClass(pct) {
 function renderResults(probsUninduced, probsInduced) {
   const uninducedLabels = ['Low', 'High'];
   const inducedLabels = ['Low', 'Medium', 'High'];
-  const uninducedConfig = { num_classes: 2, label: 'UNINDUCED', cond: 'no L-arabinose', labels: uninducedLabels };
-  const inducedConfig = { num_classes: 3, label: 'INDUCED', cond: '+ L-arabinose', labels: inducedLabels };
+  const uninducedConfig = { num_classes: 2, label: 'UNINDUCED EXPRESSION', cond: '- L-arabinose', labels: uninducedLabels };
+  const inducedConfig = { num_classes: 3, label: 'INDUCED EXPRESSION', cond: '+ L-arabinose', labels: inducedLabels };
 
   resultsGrid.innerHTML = '';
 
