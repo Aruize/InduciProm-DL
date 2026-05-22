@@ -63,9 +63,12 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 #app {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+@media (min-width: 1400px) {
+  #app { max-width: 1400px; }
 }
 header {
   display: flex;
@@ -104,7 +107,6 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   box-shadow: var(--shadow);
   transition: background 0.3s, border-color 0.3s;
   min-width: 0;
-  overflow: hidden;
 }
 .card-title {
   font-size: 14px;
@@ -138,7 +140,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
-.seq-wrapper { position: relative; overflow-x: auto; }
+.seq-wrapper { position: relative; }
 .seq-header {
   display: flex;
   justify-content: space-between;
@@ -150,15 +152,16 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   font-weight: 500;
   color: var(--text-secondary);
 }
+#wildtype-seq, #mutated-seq { width: 100%; }
 .seq-line {
   display: flex;
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.8;
-  white-space: nowrap;
+  width: 100%;
 }
 .seq-num {
-  width: 32px;
+  min-width: 32px;
   color: var(--text-secondary);
   font-size: 11px;
   text-align: right;
@@ -168,7 +171,8 @@ header-actions { display: flex; align-items: center; gap: 12px; }
 }
 .seq-bases {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  gap: 0;
 }
 .seq-block {
   display: flex;
@@ -178,8 +182,8 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 22px;
+  width: 1.2em;
+  height: 1.6em;
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -297,14 +301,20 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-size: 13px;
 }
 .prob-label {
-  width: 70px;
+  min-width: 60px;
   flex-shrink: 0;
-  font-family: var(--font-mono);
   font-weight: 500;
+}
+.prob-pct {
+  width: 48px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  flex-shrink: 0;
 }
 .prob-bar-wrap {
   flex: 1;
@@ -329,25 +339,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
 .prob-bar.low { background: #e74c3c; }
 .prob-bar.medium { background: #f39c12; }
 .prob-bar.high { background: var(--success); }
-.prob-pct {
-  width: 48px;
-  text-align: right;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  flex-shrink: 0;
-}
-.predicted-class {
-  margin-top: 10px;
-  padding: 8px 12px;
-  border-radius: var(--radius);
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-}
-.predicted-class.highlight {
-  background: var(--primary-light);
-  color: var(--primary);
-}
+
 .loading-overlay {
   display: none;
   text-align: center;
@@ -434,17 +426,15 @@ header-actions { display: flex; align-items: center; gap: 12px; }
 @media (max-width: 700px) {
   .results-grid { grid-template-columns: 1fr; }
   #app { padding: 12px; }
-  .seq-wrapper { overflow-x: auto; }
   .seq-line { font-size: 11px; }
-  .seq-base { width: 14px; height: 18px; font-size: 11px; }
-  .seq-num { width: 26px; font-size: 10px; }
+  .seq-base { font-size: 11px; }
+  .seq-num { min-width: 26px; font-size: 10px; }
   header h1 { font-size: 18px; }
 }
 @media (max-width: 480px) {
-  .seq-wrapper { overflow-x: auto; }
   .seq-line { font-size: 9px; }
-  .seq-base { width: 11px; height: 14px; font-size: 9px; }
-  .seq-num { width: 20px; font-size: 8px; }
+  .seq-base { font-size: 9px; }
+  .seq-num { min-width: 20px; font-size: 8px; padding-right: 4px; }
   .seq-block { margin-right: 3px; }
   .card { padding: 12px; }
   #mutation-input { font-size: 12px; }
@@ -561,14 +551,27 @@ themeToggle.addEventListener('click', () => {
 });
 setTheme(getTheme());
 
-// ─── Sequences ───
-function formatSeq(seq, diffs) {
+// ─── Responsive Sequences ───
+let seqResizeTimer = null;
+
+function calcBasesPerRow() {
+  const container = document.getElementById('sequence-card');
+  if (!container) return 50;
+  const fs = parseFloat(getComputedStyle(document.body).fontSize);
+  const baseW = 1.2 * fs;
+  const blockW = 10 * baseW + 6;
+  const cardInner = container.clientWidth - 40;
+  const availForBases = cardInner - 40;
+  const blocks = Math.max(1, Math.floor(availForBases / blockW));
+  return blocks * 10;
+}
+
+function formatSeq(seq, diffs, basesPerRow) {
   const lines = [];
-  for (let lineStart = 0; lineStart < 253; lineStart += 50) {
-    const end = Math.min(lineStart + 50, 253);
-    const lineNum = lineStart + 1;
+  for (let lineStart = 0; lineStart < 253; lineStart += basesPerRow) {
+    const end = Math.min(lineStart + basesPerRow, 253);
     let html = '<div class="seq-line">';
-    html += `<span class="seq-num">${lineNum}</span>`;
+    html += `<span class="seq-num">${lineStart + 1}</span>`;
     html += '<div class="seq-bases">';
     for (let i = lineStart; i < end; i += 10) {
       html += '<span class="seq-block">';
@@ -577,10 +580,7 @@ function formatSeq(seq, diffs) {
         const isDiff = diffs && diffs.has(j);
         const cls = BASE_CLASS[base] || '';
         const diffCls = isDiff ? ' diff' : '';
-        const tooltip = isDiff ? ` data-tip="WT: ${WT_SEQ[j]}"` : '';
-        html += `<span class="seq-base ${cls}${diffCls}" data-pos="${j}"${tooltip}>`;
-        html += base;
-        html += '</span>';
+        html += `<span class="seq-base ${cls}${diffCls}" data-pos="${j}">${base}</span>`;
       }
       html += '</span>';
     }
@@ -591,7 +591,8 @@ function formatSeq(seq, diffs) {
 }
 
 function renderSequences() {
-  wildtypeEl.innerHTML = formatSeq(WT_SEQ, null);
+  const bpr = calcBasesPerRow();
+  wildtypeEl.innerHTML = formatSeq(WT_SEQ, null, bpr);
   const diffs = new Set();
   const mutSeqArr = currentSeq.split('');
   for (let i = 0; i < 253; i++) {
@@ -601,13 +602,12 @@ function renderSequences() {
 
   if (diffs.size > 0) {
     mutatedCard.style.display = 'block';
-    mutatedEl.innerHTML = formatSeq(currentSeq, diffs);
+    mutatedEl.innerHTML = formatSeq(currentSeq, diffs, bpr);
     mutCount.textContent = `(${diffs.size} mutation${diffs.size > 1 ? 's' : ''})`;
   } else {
     mutatedCard.style.display = 'none';
   }
 
-  // Attach click listeners to all bases
   document.querySelectorAll('#wildtype-seq .seq-base, #mutated-seq .seq-base').forEach(el => {
     el.addEventListener('click', (e) => {
       const pos = parseInt(el.dataset.pos);
@@ -615,6 +615,11 @@ function renderSequences() {
     });
   });
 }
+
+window.addEventListener('resize', () => {
+  clearTimeout(seqResizeTimer);
+  seqResizeTimer = setTimeout(renderSequences, 100);
+});
 
 // ─── Base picker (click to mutate) ───
 let activePicker = null;
@@ -815,7 +820,7 @@ function renderResults(probsUninduced, probsInduced) {
       </div>`;
     });
 
-    html += `<div class="predicted-class highlight">Predicted: ${config.labels[predClass] || 'Class ' + predClass} (${(maxProb * 100).toFixed(1)}% confidence)</div>`;
+    html += `<div class="predicted-class highlight">Predicted: ${config.labels[predClass]} (${(maxProb * 100).toFixed(1)}% confidence)</div>`;
     card.innerHTML = html;
     resultsGrid.appendChild(card);
   });
