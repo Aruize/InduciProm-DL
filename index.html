@@ -235,7 +235,12 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   gap: 4px;
   font-size: 11px;
   color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
+.legend-item:hover { opacity: 0.7; }
+.legend-item.hidden { opacity: 0.35; text-decoration: line-through; }
 .legend-swatch {
   width: 12px;
   height: 12px;
@@ -606,14 +611,15 @@ let currentSeq = WT_SEQ;
 let diffPositions = new Set();
 const SEQ_OFFSET = 30;
 const REGIONS = [
-  { start: 31, end: 48, color: "#FFD700", label: "araO<sub>2</sub>" },
-  { start: 129, end: 209, color: "#48E7EA", label: "Pc" },
-  { start: 166, end: 209, color: "#C0C0C0", label: "araO<sub>1</sub>" },
-  { start: 210, end: 233, color: "#F895FF", label: "CRP" },
-  { start: 242, end: 260, color: "#90EE90", label: "araI<sub>1</sub>" },
-  { start: 263, end: 280, color: "#FF951C", label: "araI<sub>2</sub>" },
-  { start: 277, end: 282, color: "#ADD8E6", label: "-35 box" },
+  { name: 'araO2', start: 31, end: 48, color: "#FFD700", label: "araO<sub>2</sub>" },
+  { name: 'Pc', start: 129, end: 209, color: "#48E7EA", label: "Pc" },
+  { name: 'araO1', start: 166, end: 209, color: "#C0C0C0", label: "araO<sub>1</sub>" },
+  { name: 'CRP', start: 210, end: 233, color: "#F895FF", label: "CRP" },
+  { name: 'araI1', start: 242, end: 260, color: "#90EE90", label: "araI<sub>1</sub>" },
+  { name: 'araI2', start: 263, end: 280, color: "#FF951C", label: "araI<sub>2</sub>" },
+  { name: '35box', start: 277, end: 282, color: "#ADD8E6", label: "-35 box" },
 ];
+const HIDDEN_REGIONS = new Set();
 let uninducedSession = null;
 let inducedSession = null;
 let modelsReady = false;
@@ -651,8 +657,12 @@ setTheme(getTheme());
 function buildRegionColorMap() {
   const map = {};
   for (const r of REGIONS) {
+    if (HIDDEN_REGIONS.has(r.name)) continue;
     for (let i = r.start - SEQ_OFFSET; i <= r.end - SEQ_OFFSET; i++) {
-      if (i >= 0 && i < 253) map[i] = { color: r.color, label: r.label };
+      if (i >= 0 && i < 253) {
+        if (!map[i]) map[i] = [];
+        map[i].push({ color: r.color, label: r.label });
+      }
     }
   }
   return map;
@@ -688,8 +698,17 @@ function formatSeq(seq, diffs, basesPerRow, regionMap) {
         const isDiff = diffs && diffs.has(j);
         const cls = BASE_CLASS[base] || '';
         const diffCls = isDiff ? ' diff' : '';
-        const reg = regionMap && regionMap[j];
-        const style = reg ? ` style="background:${reg.color}44;border-bottom:2px solid ${reg.color}"` : '';
+        const regs = regionMap && regionMap[j];
+        let style = '';
+        if (regs) {
+          if (regs.length === 1) {
+            const c = regs[0].color;
+            style = ` style="background:${c}44;border-bottom:2px solid ${c}"`;
+          } else {
+            const cs = regs.map(r => r.color);
+            style = ` style="background:linear-gradient(90deg,${cs.map(c => c + '44').join(',')});border-bottom:2px solid transparent;border-image:linear-gradient(90deg,${cs.join(',')}) 2"`;
+          }
+        }
         html += `<span class="seq-base ${cls}${diffCls}" data-pos="${j}"${style}>${base}</span>`;
       }
       html += '</span>';
@@ -732,9 +751,18 @@ function renderLegend() {
   const legendEl = document.getElementById('region-legend');
   let html = '';
   for (const r of REGIONS) {
-    html += `<span class="legend-item"><span class="legend-swatch" style="background:${r.color}66;border-color:${r.color}"></span>${r.label}</span>`;
+    const hidden = HIDDEN_REGIONS.has(r.name);
+    html += `<span class="legend-item${hidden ? ' hidden' : ''}" data-name="${r.name}"><span class="legend-swatch" style="background:${r.color}66;border-color:${r.color}"></span>${r.label}</span>`;
   }
   legendEl.innerHTML = html;
+  legendEl.querySelectorAll('.legend-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.name;
+      if (HIDDEN_REGIONS.has(name)) HIDDEN_REGIONS.delete(name);
+      else HIDDEN_REGIONS.add(name);
+      renderSequences();
+    });
+  });
 }
 
 window.addEventListener('resize', () => {
