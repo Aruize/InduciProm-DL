@@ -825,7 +825,6 @@ async function loadModels() {
     inducedSession = induced;
     modelsReady = true;
     updatePredictButton();
-    showToast('Both models loaded successfully!', 2000);
   } catch (err) {
     showToast('Failed to load one or both models. Check console for details.', 5000);
   }
