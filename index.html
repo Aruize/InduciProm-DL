@@ -750,6 +750,27 @@ function renderSequences() {
   });
 }
 
+function updateRegionHighlights() {
+  const regionMap = buildRegionColorMap();
+  document.querySelectorAll('.seq-base[data-pos]').forEach(el => {
+    const j = parseInt(el.dataset.pos);
+    const regs = regionMap && regionMap[j];
+    let style = '';
+    if (regs) {
+      if (regs.length === 1) {
+        const c = regs[0].color;
+        style = `background:${c}44;border-bottom:2px solid ${c}`;
+      } else {
+        const cs = regs.map(r => r.color);
+        style = `background:linear-gradient(90deg,${cs.map(c => c + '44').join(',')});border-bottom:2px solid transparent;border-image:linear-gradient(90deg,${cs.join(',')}) 2`;
+      }
+    }
+    if (style) el.setAttribute('style', style);
+    else el.removeAttribute('style');
+  });
+  renderLegend();
+}
+
 function renderLegend() {
   const legendEl = document.getElementById('region-legend');
   let html = '';
@@ -763,7 +784,7 @@ function renderLegend() {
       const name = el.dataset.name;
       if (HIDDEN_REGIONS.has(name)) HIDDEN_REGIONS.delete(name);
       else HIDDEN_REGIONS.add(name);
-      renderSequences();
+      updateRegionHighlights();
     });
   });
 }
