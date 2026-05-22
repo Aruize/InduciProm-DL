@@ -221,6 +221,28 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   pointer-events: none;
 }
 .seq-base:hover .base-tooltip { display: block; }
+.region-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1.5px solid;
+  flex-shrink: 0;
+}
 .mutation-input-group {
   display: flex;
   gap: 8px;
@@ -535,6 +557,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
         <button class="btn btn-secondary" id="reset-btn" style="padding:4px 10px;font-size:12px;">Reset</button>
       </div>
       <div id="wildtype-seq"></div>
+      <div id="region-legend" class="region-legend"></div>
     </div>
   </div>
 
@@ -582,6 +605,15 @@ const BASE_CLASS = { A: 'base-A', C: 'base-C', G: 'base-G', T: 'base-T' };
 let currentSeq = WT_SEQ;
 let diffPositions = new Set();
 const SEQ_OFFSET = 30;
+const REGIONS = [
+  { start: 31, end: 48, color: "#FFD700", label: "araO<sub>2</sub>" },
+  { start: 129, end: 209, color: "#48E7EA", label: "Pc" },
+  { start: 166, end: 209, color: "#C0C0C0", label: "araO<sub>1</sub>" },
+  { start: 210, end: 233, color: "#F895FF", label: "CRP" },
+  { start: 242, end: 260, color: "#90EE90", label: "araI<sub>1</sub>" },
+  { start: 263, end: 280, color: "#FF951C", label: "araI<sub>2</sub>" },
+  { start: 277, end: 282, color: "#ADD8E6", label: "-35 box" },
+];
 let uninducedSession = null;
 let inducedSession = null;
 let modelsReady = false;
@@ -615,6 +647,17 @@ themeToggle.addEventListener('click', () => {
 });
 setTheme(getTheme());
 
+// ─── Region color map ───
+function buildRegionColorMap() {
+  const map = {};
+  for (const r of REGIONS) {
+    for (let i = r.start - SEQ_OFFSET; i <= r.end - SEQ_OFFSET; i++) {
+      if (i >= 0 && i < 253) map[i] = { color: r.color, label: r.label };
+    }
+  }
+  return map;
+}
+
 // ─── Responsive Sequences ───
 let seqResizeTimer = null;
 
@@ -631,7 +674,7 @@ function calcBasesPerRow() {
   return blocks * 10;
 }
 
-function formatSeq(seq, diffs, basesPerRow) {
+function formatSeq(seq, diffs, basesPerRow, regionMap) {
   const lines = [];
   for (let lineStart = 0; lineStart < 253; lineStart += basesPerRow) {
     const end = Math.min(lineStart + basesPerRow, 253);
@@ -645,7 +688,9 @@ function formatSeq(seq, diffs, basesPerRow) {
         const isDiff = diffs && diffs.has(j);
         const cls = BASE_CLASS[base] || '';
         const diffCls = isDiff ? ' diff' : '';
-        html += `<span class="seq-base ${cls}${diffCls}" data-pos="${j}">${base}</span>`;
+        const reg = regionMap && regionMap[j];
+        const style = reg ? ` style="background:${reg.color}44;border-bottom:2px solid ${reg.color}"` : '';
+        html += `<span class="seq-base ${cls}${diffCls}" data-pos="${j}"${style}>${base}</span>`;
       }
       html += '</span>';
     }
@@ -657,7 +702,9 @@ function formatSeq(seq, diffs, basesPerRow) {
 
 function renderSequences() {
   const bpr = calcBasesPerRow();
-  wildtypeEl.innerHTML = formatSeq(WT_SEQ, null, bpr);
+  const regionMap = buildRegionColorMap();
+  wildtypeEl.innerHTML = formatSeq(WT_SEQ, null, bpr, regionMap);
+  renderLegend();
   const diffs = new Set();
   const mutSeqArr = currentSeq.split('');
   for (let i = 0; i < 253; i++) {
@@ -667,7 +714,7 @@ function renderSequences() {
 
   if (diffs.size > 0) {
     mutatedCard.style.display = 'block';
-    mutatedEl.innerHTML = formatSeq(currentSeq, diffs, bpr);
+    mutatedEl.innerHTML = formatSeq(currentSeq, diffs, bpr, regionMap);
     mutCount.textContent = `(${diffs.size} mutation${diffs.size > 1 ? 's' : ''})`;
   } else {
     mutatedCard.style.display = 'none';
@@ -679,6 +726,15 @@ function renderSequences() {
       showBasePicker(e, pos, el);
     });
   });
+}
+
+function renderLegend() {
+  const legendEl = document.getElementById('region-legend');
+  let html = '';
+  for (const r of REGIONS) {
+    html += `<span class="legend-item"><span class="legend-swatch" style="background:${r.color}66;border-color:${r.color}"></span>${r.label}</span>`;
+  }
+  legendEl.innerHTML = html;
 }
 
 window.addEventListener('resize', () => {
