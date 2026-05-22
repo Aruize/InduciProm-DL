@@ -614,6 +614,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
     </div>
     <div class="seq-wrapper">
       <div id="mutated-seq"></div>
+      <div id="mut-region-legend" class="region-legend"></div>
     </div>
   </div>
 
@@ -652,7 +653,8 @@ const REGIONS = [
   { name: 'araI2', start: 263, end: 280, color: "#FF951C", label: "araI\u2082" },
   { name: '35box', start: 277, end: 282, color: "#ADD8E6", label: "-35 box" },
 ];
-const HIDDEN_REGIONS = new Set(['Pc']);
+const WT_HIDDEN = new Set(['Pc']);
+const MUT_HIDDEN = new Set();
 let uninducedSession = null;
 let inducedSession = null;
 let modelsReady = false;
@@ -687,10 +689,10 @@ themeToggle.addEventListener('click', () => {
 setTheme(getTheme());
 
 // ─── Region color map ───
-function buildRegionColorMap() {
+function buildRegionColorMap(hidden) {
   const map = {};
   for (const r of REGIONS) {
-    if (HIDDEN_REGIONS.has(r.name)) continue;
+    if (hidden && hidden.has(r.name)) continue;
     for (let i = r.start - SEQ_OFFSET; i <= r.end - SEQ_OFFSET; i++) {
       if (i >= 0 && i < 253) {
         if (!map[i]) map[i] = [];
@@ -753,7 +755,8 @@ function formatSeq(seq, diffs, basesPerRow, regionMap, diffClass) {
 }
 
 function renderSequences() {
-  const regionMap = buildRegionColorMap();
+  const wtMap = buildRegionColorMap(WT_HIDDEN);
+  const mutMap = buildRegionColorMap(MUT_HIDDEN);
   const diffs = new Set();
   const mutSeqArr = currentSeq.split('');
   for (let i = 0; i < 253; i++) {
@@ -761,12 +764,13 @@ function renderSequences() {
   }
   diffPositions = diffs;
 
-  wildtypeEl.innerHTML = formatSeq(WT_SEQ, diffs, currentBpr, regionMap, 'mutated');
-  renderLegend();
+  wildtypeEl.innerHTML = formatSeq(WT_SEQ, diffs, currentBpr, wtMap, 'mutated');
+  renderLegend('region-legend', WT_HIDDEN);
 
   if (diffs.size > 0) {
     mutatedCard.style.display = 'block';
-    mutatedEl.innerHTML = formatSeq(currentSeq, diffs, currentBpr, regionMap, 'diff');
+    mutatedEl.innerHTML = formatSeq(currentSeq, diffs, currentBpr, mutMap, 'diff');
+    renderLegend('mut-region-legend', MUT_HIDDEN);
     mutCount.textContent = `(${diffs.size} mutation${diffs.size > 1 ? 's' : ''})`;
   } else {
     mutatedCard.style.display = 'none';
@@ -781,10 +785,10 @@ function renderSequences() {
 }
 
 function updateRegionHighlights() {
-  const regionMap = buildRegionColorMap();
-  document.querySelectorAll('.seq-base[data-pos]').forEach(el => {
+  const wtMap = buildRegionColorMap(WT_HIDDEN);
+  document.querySelectorAll('#wildtype-seq .seq-base[data-pos]').forEach(el => {
     const j = parseInt(el.dataset.pos);
-    const regs = regionMap && regionMap[j];
+    const regs = wtMap && wtMap[j];
     let style = '';
     if (regs) {
       if (regs.length === 1) {
@@ -798,22 +802,40 @@ function updateRegionHighlights() {
     if (style) el.setAttribute('style', style);
     else el.removeAttribute('style');
   });
-  renderLegend();
+  const mutMap = buildRegionColorMap(MUT_HIDDEN);
+  document.querySelectorAll('#mutated-seq .seq-base[data-pos]').forEach(el => {
+    const j = parseInt(el.dataset.pos);
+    const regs = mutMap && mutMap[j];
+    let style = '';
+    if (regs) {
+      if (regs.length === 1) {
+        const c = regs[0].color;
+        style = `background:${c}44;border-bottom:2px solid ${c}`;
+      } else {
+        const cs = regs.map(r => r.color);
+        style = `background:linear-gradient(90deg,${cs.map(c => c + '44').join(',')});border-bottom:2px solid transparent;border-image:linear-gradient(90deg,${cs.join(',')}) 2`;
+      }
+    }
+    if (style) el.setAttribute('style', style);
+    else el.removeAttribute('style');
+  });
+  renderLegend('region-legend', WT_HIDDEN);
+  renderLegend('mut-region-legend', MUT_HIDDEN);
 }
 
-function renderLegend() {
-  const legendEl = document.getElementById('region-legend');
+function renderLegend(elId, hidden) {
+  const legendEl = document.getElementById(elId);
   let html = '';
   for (const r of REGIONS) {
-    const hidden = HIDDEN_REGIONS.has(r.name);
-    html += `<span class="legend-item${hidden ? ' hidden' : ''}" data-name="${r.name}"><span class="legend-swatch" style="background:${r.color}66;border-color:${r.color}"></span>${r.label}</span>`;
+    const h = hidden.has(r.name);
+    html += `<span class="legend-item${h ? ' hidden' : ''}" data-name="${r.name}"><span class="legend-swatch" style="background:${r.color}66;border-color:${r.color}"></span>${r.label}</span>`;
   }
   legendEl.innerHTML = html;
   legendEl.querySelectorAll('.legend-item').forEach(el => {
     el.addEventListener('click', () => {
       const name = el.dataset.name;
-      if (HIDDEN_REGIONS.has(name)) HIDDEN_REGIONS.delete(name);
-      else HIDDEN_REGIONS.add(name);
+      if (hidden.has(name)) hidden.delete(name);
+      else hidden.add(name);
       updateRegionHighlights();
     });
   });
