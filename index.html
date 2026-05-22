@@ -63,12 +63,9 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 #app {
-  max-width: 1200px;
+  max-width: 1920px;
   margin: 0 auto;
   padding: 20px;
-}
-@media (min-width: 1400px) {
-  #app { max-width: 1400px; }
 }
 header {
   display: flex;
@@ -173,6 +170,8 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   display: flex;
   flex-wrap: wrap;
   gap: 0;
+  flex: 1;
+  min-width: 0;
 }
 .seq-block {
   display: flex;
@@ -472,6 +471,10 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   transition: transform 0.1s;
 }
 .base-option:hover { transform: scale(1.2); }
+@media (min-width: 1600px) {
+  .seq-line { font-size: 15px; }
+  .seq-base { font-size: 15px; }
+}
 @media (max-width: 700px) {
   .results-grid { grid-template-columns: 1fr; }
   #app { padding: 12px; }
@@ -538,7 +541,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   <div class="card">
     <div class="card-title">Mutations</div>
     <div class="mutation-input-group">
-      <input type="text" id="mutation-input" placeholder="e.g. A52T, G103C, T200A" spellcheck="false">
+      <input type="text" id="mutation-input" placeholder="e.g. A81T, G132C, T229A" spellcheck="false">
       <button class="btn btn-primary" id="apply-btn">Apply</button>
     </div>
     <div style="margin-top:6px;font-size:12px;color:var(--text-secondary);">
@@ -578,6 +581,7 @@ const BASE_CLASS = { A: 'base-A', C: 'base-C', G: 'base-G', T: 'base-T' };
 
 let currentSeq = WT_SEQ;
 let diffPositions = new Set();
+const SEQ_OFFSET = 30;
 let uninducedSession = null;
 let inducedSession = null;
 let modelsReady = false;
@@ -617,7 +621,8 @@ let seqResizeTimer = null;
 function calcBasesPerRow() {
   const container = document.getElementById('sequence-card');
   if (!container) return 50;
-  const fs = parseFloat(getComputedStyle(document.body).fontSize);
+  const sample = document.querySelector('.seq-base');
+  const fs = sample ? parseFloat(getComputedStyle(sample).fontSize) : parseFloat(getComputedStyle(document.body).fontSize);
   const baseW = 1.2 * fs;
   const blockW = 10 * baseW + 6;
   const cardInner = container.clientWidth - 40;
@@ -631,7 +636,7 @@ function formatSeq(seq, diffs, basesPerRow) {
   for (let lineStart = 0; lineStart < 253; lineStart += basesPerRow) {
     const end = Math.min(lineStart + basesPerRow, 253);
     let html = '<div class="seq-line">';
-    html += `<span class="seq-num">${lineStart + 1}</span>`;
+    html += `<span class="seq-num">${lineStart + SEQ_OFFSET}</span>`;
     html += '<div class="seq-bases">';
     for (let i = lineStart; i < end; i += 10) {
       html += '<span class="seq-block">';
@@ -729,7 +734,7 @@ function parseMutation(mutStr) {
   mutStr = mutStr.trim().toUpperCase();
   const m = mutStr.match(/^([ACGT])(\d+)([ACGT])$/);
   if (!m) return null;
-  return { origBase: m[1], pos: parseInt(m[2]) - 1, newBase: m[3] };
+  return { origBase: m[1], pos: parseInt(m[2]) - SEQ_OFFSET, newBase: m[3] };
 }
 
 function applyMutations(input) {
@@ -740,9 +745,9 @@ function applyMutations(input) {
 
   for (const part of parts) {
     const mut = parseMutation(part);
-    if (!mut) { errors.push(`"${part}" — use format like A52T`); continue; }
-    if (mut.pos < 0 || mut.pos >= 253) { errors.push(`"${part}" — position out of range (1-253)`); continue; }
-    if (seq[mut.pos] !== mut.origBase) { errors.push(`"${part}" — expected ${mut.origBase} at position ${mut.pos+1}, found ${seq[mut.pos]}`); continue; }
+    if (!mut) { errors.push(`"${part}" — use format like A81T`); continue; }
+    if (mut.pos < 0 || mut.pos >= 253) { errors.push(`"${part}" — position out of range (${SEQ_OFFSET}-${SEQ_OFFSET + 252})`); continue; }
+    if (seq[mut.pos] !== mut.origBase) { errors.push(`"${part}" — expected ${mut.origBase} at position ${mut.pos + SEQ_OFFSET}, found ${seq[mut.pos]}`); continue; }
     seq[mut.pos] = mut.newBase;
     applied++;
   }
