@@ -246,6 +246,55 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   box-shadow: 0 0 0 3px var(--primary-light);
 }
 #mutation-input::placeholder { color: var(--text-secondary); }
+.status-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.status-row .card {
+  margin-bottom: 0;
+}
+.promoter-card {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.model-card {
+  flex: 1;
+  min-width: 0;
+}
+.promoter-select-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.promoter-select-group label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+#promoter-select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+#promoter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+#promoter-select option:disabled {
+  color: var(--text-secondary);
+}
 .btn {
   padding: 8px 18px;
   border: none;
@@ -450,16 +499,27 @@ header-actions { display: flex; align-items: center; gap: 12px; }
     </div>
   </header>
 
-  <div class="card">
-    <div class="card-title">Model Status</div>
-    <div class="model-status" id="model-status">
-      <div class="model-status-item">
-        <span class="model-dot loading" id="dot-uninduced"></span>
-        <span>UNINDUCED (0% L-arabinose)</span>
+  <div class="status-row">
+    <div class="card promoter-card">
+      <div class="promoter-select-group">
+        <label for="promoter-select">Promoter</label>
+        <select id="promoter-select">
+          <option value="arabinose" selected>L-arabinose (pBAD)</option>
+          <option value="rhamnose" disabled>L-rhamnose (rhaBAD) — Coming soon</option>
+        </select>
       </div>
-      <div class="model-status-item">
-        <span class="model-dot loading" id="dot-induced"></span>
-        <span>INDUCED (0.2% L-arabinose)</span>
+    </div>
+    <div class="card model-card">
+      <div class="card-title">Model Status</div>
+      <div class="model-status" id="model-status">
+        <div class="model-status-item">
+          <span class="model-dot loading" id="dot-uninduced"></span>
+          <span>UNINDUCED (0% L-arabinose)</span>
+        </div>
+        <div class="model-status-item">
+          <span class="model-dot loading" id="dot-induced"></span>
+          <span>INDUCED (0.2% L-arabinose)</span>
+        </div>
       </div>
     </div>
   </div>
