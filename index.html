@@ -453,11 +453,11 @@ header-actions { display: flex; align-items: center; gap: 12px; }
     <div class="model-status" id="model-status">
       <div class="model-status-item">
         <span class="model-dot loading" id="dot-uninduced"></span>
-        <span>UNINDUCED (0% arabinose) — bins 1 vs 4</span>
+        <span>UNINDUCED (0% L-arabinose)</span>
       </div>
       <div class="model-status-item">
         <span class="model-dot loading" id="dot-induced"></span>
-        <span>INDUCED (0.2% arabinose) — bins 1, 2/3, 4</span>
+        <span>INDUCED (0.2% L-arabinose)</span>
       </div>
     </div>
   </div>
@@ -771,10 +771,10 @@ function getBarClass(pct) {
 }
 
 function renderResults(probsUninduced, probsInduced) {
-  const uninducedLabels = ['Low (bin 1)', 'High (bin 4)'];
-  const inducedLabels = ['Low (bin 1)', 'Medium (bin 2/3)', 'High (bin 4)'];
-  const uninducedConfig = { num_classes: 2, label: 'UNINDUCED', cond: 'no arabinose', labels: uninducedLabels };
-  const inducedConfig = { num_classes: 3, label: 'INDUCED', cond: '+ arabinose', labels: inducedLabels };
+  const uninducedLabels = ['Low', 'High'];
+  const inducedLabels = ['Low', 'Medium', 'High'];
+  const uninducedConfig = { num_classes: 2, label: 'UNINDUCED', cond: 'no L-arabinose', labels: uninducedLabels };
+  const inducedConfig = { num_classes: 3, label: 'INDUCED', cond: '+ L-arabinose', labels: inducedLabels };
 
   resultsGrid.innerHTML = '';
 
