@@ -193,9 +193,15 @@ header-actions { display: flex; align-items: center; gap: 12px; }
 }
 .seq-base:hover { transform: scale(1.15); z-index: 1; }
 .seq-base.diff {
-  background: var(--diff-bg);
-  color: var(--diff-text);
+  background: rgba(231,76,60,0.5) !important;
+  color: #fff !important;
   border-radius: 3px;
+  font-weight: 800;
+}
+.seq-base.mutated {
+  outline: 1.5px solid var(--text-secondary);
+  outline-offset: 0;
+  border-radius: 2px;
 }
 .base-A { color: var(--base-A); }
 .base-C { color: var(--base-C); }
@@ -355,6 +361,28 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+.results-mutations {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 0;
+  margin-bottom: 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.mutations-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.mutations-list {
+  font-family: var(--font-mono);
+  color: var(--text);
+  word-break: break-all;
 }
 .result-card {
   background: var(--surface-alt);
@@ -593,6 +621,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
 
   <div class="card" id="results-card" style="display:none;">
     <div class="card-title">Prediction Results</div>
+    <div id="results-mutations" class="results-mutations"></div>
     <div class="loading-overlay active" id="results-loading">
       <div class="spinner"></div>
       <div style="font-size:14px;color:var(--text-secondary);">Running inference...</div>
@@ -612,6 +641,7 @@ const BASE_CLASS = { A: 'base-A', C: 'base-C', G: 'base-G', T: 'base-T' };
 
 let currentSeq = WT_SEQ;
 let diffPositions = new Set();
+let currentBpr = 50;
 const SEQ_OFFSET = 30;
 const REGIONS = [
   { name: 'araO2', start: 31, end: 48, color: "#FFD700", label: "araO\u2082" },
@@ -687,7 +717,7 @@ function calcBasesPerRow() {
   return blocks * 10;
 }
 
-function formatSeq(seq, diffs, basesPerRow, regionMap) {
+function formatSeq(seq, diffs, basesPerRow, regionMap, diffClass) {
   const lines = [];
   for (let lineStart = 0; lineStart < 253; lineStart += basesPerRow) {
     const end = Math.min(lineStart + basesPerRow, 253);
@@ -700,7 +730,7 @@ function formatSeq(seq, diffs, basesPerRow, regionMap) {
         const base = seq[j];
         const isDiff = diffs && diffs.has(j);
         const cls = BASE_CLASS[base] || '';
-        const diffCls = isDiff ? ' diff' : '';
+        const diffCls = isDiff ? (diffClass ? ` ${diffClass}` : ' diff') : '';
         const regs = regionMap && regionMap[j];
         let style = '';
         if (regs) {
@@ -723,10 +753,7 @@ function formatSeq(seq, diffs, basesPerRow, regionMap) {
 }
 
 function renderSequences() {
-  const bpr = calcBasesPerRow();
   const regionMap = buildRegionColorMap();
-  wildtypeEl.innerHTML = formatSeq(WT_SEQ, null, bpr, regionMap);
-  renderLegend();
   const diffs = new Set();
   const mutSeqArr = currentSeq.split('');
   for (let i = 0; i < 253; i++) {
@@ -734,9 +761,12 @@ function renderSequences() {
   }
   diffPositions = diffs;
 
+  wildtypeEl.innerHTML = formatSeq(WT_SEQ, diffs, currentBpr, regionMap, 'mutated');
+  renderLegend();
+
   if (diffs.size > 0) {
     mutatedCard.style.display = 'block';
-    mutatedEl.innerHTML = formatSeq(currentSeq, diffs, bpr, regionMap);
+    mutatedEl.innerHTML = formatSeq(currentSeq, diffs, currentBpr, regionMap, 'diff');
     mutCount.textContent = `(${diffs.size} mutation${diffs.size > 1 ? 's' : ''})`;
   } else {
     mutatedCard.style.display = 'none';
@@ -789,9 +819,14 @@ function renderLegend() {
   });
 }
 
+function recalcBprAndRender() {
+  currentBpr = calcBasesPerRow();
+  renderSequences();
+}
+
 window.addEventListener('resize', () => {
   clearTimeout(seqResizeTimer);
-  seqResizeTimer = setTimeout(renderSequences, 100);
+  seqResizeTimer = setTimeout(recalcBprAndRender, 100);
 });
 
 // ─── Base picker (click to mutate) ───
@@ -1010,6 +1045,17 @@ async function predict() {
   resultsLoading.style.display = '';
   resultsGrid.style.display = 'none';
 
+  const muts = [];
+  for (let i = 0; i < 253; i++) {
+    if (currentSeq[i] !== WT_SEQ[i]) muts.push(`${WT_SEQ[i]}${i + SEQ_OFFSET}${currentSeq[i]}`);
+  }
+  const mutsEl = document.getElementById('results-mutations');
+  if (muts.length > 0) {
+    mutsEl.innerHTML = `<span class="mutations-label">Variants</span><span class="mutations-list">${muts.join(', ')}</span>`;
+  } else {
+    mutsEl.innerHTML = `<span class="mutations-label">Variants</span><span class="mutations-list">Wild type</span>`;
+  }
+
   try {
     const [probsUninduced, probsInduced] = await Promise.all([
       runInference(uninducedSession, currentSeq),
@@ -1041,6 +1087,7 @@ function showToast(msg, duration) {
 }
 
 // ─── Init ───
+currentBpr = calcBasesPerRow();
 renderSequences();
 updatePredictButton();
 loadModels();
