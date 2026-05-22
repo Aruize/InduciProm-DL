@@ -1,6 +1,6 @@
 # GFP Expression Predictor
 
-Browser-based tool that predicts GFP expression from promoter E. coli DNA sequences using CNN models. Runs entirely client-side via ONNX Runtime Web.
+Browser-based tool that predicts GFP expression from *E. coli* inducible promoter DNA sequences using CNN models. Runs entirely client-side via ONNX Runtime Web.
 
 This is a screening tool for evaluating promoter variants before experimental validation. Predictions are computational estimates and experimental confirmation is required to verify promoter activity.
 
