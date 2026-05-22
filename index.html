@@ -913,10 +913,9 @@ async function predict() {
 predictBtn.addEventListener('click', predict);
 
 function updatePredictButton() {
-  const hasChanges = currentSeq !== WT_SEQ;
   const canPredict = modelsReady && currentSeq.length === 253;
   predictBtn.disabled = !canPredict;
-  predictBtn.textContent = hasChanges ? 'Predict GFP Expression' : 'Predict GFP Expression (wild type)';
+  predictBtn.textContent = 'Predict GFP Expression';
 }
 
 // ─── Toast ───
