@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GFP Expression Predictor</title>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<style>
+:root {
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --surface-alt: #f0f1f3;
+  --text: #1a1a2e;
+  --text-secondary: #6c757d;
+  --border: #dee2e6;
+  --primary: #4361ee;
+  --primary-hover: #3a56d4;
+  --primary-light: #eef0ff;
+  --success: #2ecc71;
+  --base-A: #2ecc71;
+  --base-C: #3498db;
+  --base-G: #f39c12;
+  --base-T: #e74c3c;
+  --base-A-bg: rgba(46,204,113,0.15);
+  --base-C-bg: rgba(52,152,219,0.15);
+  --base-G-bg: rgba(243,156,18,0.15);
+  --base-T-bg: rgba(231,76,60,0.15);
+  --diff-bg: rgba(231,76,60,0.25);
+  --diff-text: #e74c3c;
+  --bar-bg: #e9ecef;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --radius: 8px;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+}
+.dark {
+  --bg: #0f0f1a;
+  --surface: #1a1a2e;
+  --surface-alt: #16213e;
+  --text: #e8e8e8;
+  --text-secondary: #a0a0b0;
+  --border: #2a2a4a;
+  --primary: #5e7ce2;
+  --primary-hover: #4e6cd2;
+  --primary-light: rgba(94,124,226,0.12);
+  --base-A: #2ecc71;
+  --base-C: #5dade2;
+  --base-G: #f5b041;
+  --base-T: #e74c3c;
+  --base-A-bg: rgba(46,204,113,0.12);
+  --base-C-bg: rgba(93,173,226,0.12);
+  --base-G-bg: rgba(245,176,65,0.12);
+  --base-T-bg: rgba(231,76,60,0.12);
+  --diff-bg: rgba(231,76,60,0.3);
+  --bar-bg: #2a2a4a;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  transition: background 0.3s, color 0.3s;
+}
+#app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+header h1 span { color: var(--primary); }
+header-actions { display: flex; align-items: center; gap: 12px; }
+#theme-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+#theme-toggle:hover { background: var(--surface-alt); }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  transition: background 0.3s, border-color 0.3s;
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.model-status {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.model-status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 4px 0;
+}
+.model-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.model-dot.loading { background: #f39c12; animation: pulse 1.2s infinite; }
+.model-dot.ready { background: var(--success); }
+.model-dot.error { background: var(--base-T); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.seq-wrapper { position: relative; }
+.seq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.seq-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.seq-line {
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: nowrap;
+}
+.seq-num {
+  width: 32px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-align: right;
+  padding-right: 8px;
+  flex-shrink: 0;
+  user-select: none;
+}
+.seq-bases {
+  display: flex;
+  flex-wrap: nowrap;
+}
+.seq-block {
+  display: flex;
+  margin-right: 6px;
+}
+.seq-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 22px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.1s;
+}
+.seq-base:hover { transform: scale(1.15); z-index: 1; }
+.seq-base.diff {
+  background: var(--diff-bg);
+  color: var(--diff-text);
+  border-radius: 3px;
+}
+.base-A { color: var(--base-A); }
+.base-C { color: var(--base-C); }
+.base-G { color: var(--base-G); }
+.base-T { color: var(--base-T); }
+.base-A:hover { background: var(--base-A-bg); }
+.base-C:hover { background: var(--base-C-bg); }
+.base-G:hover { background: var(--base-G-bg); }
+.base-T:hover { background: var(--base-T-bg); }
+.base-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+}
+.seq-base:hover .base-tooltip { display: block; }
+.mutation-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#mutation-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+#mutation-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+#mutation-input::placeholder { color: var(--text-secondary); }
+.btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s, opacity 0.2s;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary {
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--border); }
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+#predict-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.result-card {
+  background: var(--surface-alt);
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+.result-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.result-card .cond {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.prob-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.prob-label {
+  width: 70px;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+.prob-bar-wrap {
+  flex: 1;
+  height: 16px;
+  background: var(--bar-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.prob-bar {
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 0;
+}
+.prob-bar.low { background: #e74c3c; }
+.prob-bar.medium { background: #f39c12; }
+.prob-bar.high { background: var(--success); }
+.prob-pct {
+  width: 48px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.predicted-class {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+.predicted-class.highlight {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.loading-overlay {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+}
+.loading-overlay.active { display: block; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.inline-spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+#interactive-seq {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+}
+#interactive-seq .seq-base {
+  width: 18px;
+  height: 26px;
+  font-size: 12px;
+}
+.base-picker {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 20;
+  padding: 4px;
+  white-space: nowrap;
+}
+.base-picker.active { display: flex; gap: 2px; }
+.base-option {
+  width: 24px; height: 24px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  transition: transform 0.1s;
+}
+.base-option:hover { transform: scale(1.2); }
+@media (max-width: 700px) {
+  .results-grid { grid-template-columns: 1fr; }
+  #app { padding: 12px; }
+  .seq-line { font-size: 11px; }
+  .seq-base { width: 14px; height: 18px; font-size: 11px; }
+  .seq-num { width: 26px; font-size: 10px; }
+  header h1 { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1><span>GFP</span> Expression Predictor</h1>
+    <div class="header-actions">
+      <button id="theme-toggle">Dark Mode</button>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="card-title">Model Status</div>
+    <div class="model-status" id="model-status">
+      <div class="model-status-item">
+        <span class="model-dot loading" id="dot-uninduced"></span>
+        <span>UNINDUCED (0% arabinose) — bins 1 vs 4</span>
+      </div>
+      <div class="model-status-item">
+        <span class="model-dot loading" id="dot-induced"></span>
+        <span>INDUCED (0.2% arabinose) — bins 1, 2/3, 4</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="sequence-card">
+    <div class="card-title">Sequence</div>
+    <div class="seq-wrapper">
+      <div class="seq-header">
+        <span class="seq-label">Wild Type <span style="font-weight:400;font-size:11px;">(click a base to mutate)</span></span>
+        <button class="btn btn-secondary" id="reset-btn" style="padding:4px 10px;font-size:12px;">Reset</button>
+      </div>
+      <div id="wildtype-seq"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Mutations</div>
+    <div class="mutation-input-group">
+      <input type="text" id="mutation-input" placeholder="e.g. A52T, G103C, T200A" spellcheck="false">
+      <button class="btn btn-primary" id="apply-btn">Apply</button>
+    </div>
+    <div style="margin-top:6px;font-size:12px;color:var(--text-secondary);">
+      Format: <code style="background:var(--surface-alt);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);">OriginalBasePositionNewBase</code> — use 1-indexed positions. Separate multiple with commas.
+    </div>
+  </div>
+
+  <div class="card" id="mutated-card" style="display:none;">
+    <div class="seq-header">
+      <span class="seq-label">Mutated Sequence <span id="mut-count" style="font-weight:400;font-size:11px;"></span></span>
+    </div>
+    <div class="seq-wrapper">
+      <div id="mutated-seq"></div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="predict-btn" disabled>Predict GFP Expression</button>
+
+  <div class="card" id="results-card" style="display:none;">
+    <div class="card-title">Prediction Results</div>
+    <div class="loading-overlay active" id="results-loading">
+      <div class="spinner"></div>
+      <div style="font-size:14px;color:var(--text-secondary);">Running inference...</div>
+    </div>
+    <div class="results-grid" id="results-grid" style="display:none;"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const WT_SEQ = "AAGAAACCAATTGTCCATATTGCATCAGACATTGCCGTCACTGCGTCTTTTACTGGCTCTTCTCGCTAACCAAACCGGTAACCCCGCTTATTAAAAGCATTCTGTAACAAAGCGGGACCAAAGCCATGACAAAAACGCGTAACAAAAGTGTCTATAATCACGGCAGAAAAGTCCACATTGATTATTTGCACGGCGTCACACTTTGCTATGCCATAGCATTTTTATCCATAAGATTAGCGGATACTACCTGACG";
+
+const BASES = ['A', 'C', 'G', 'T'];
+const BASE_COLORS = { A: 'var(--base-A)', C: 'var(--base-C)', G: 'var(--base-G)', T: 'var(--base-T)' };
+const BASE_CLASS = { A: 'base-A', C: 'base-C', G: 'base-G', T: 'base-T' };
+
+let currentSeq = WT_SEQ;
+let diffPositions = new Set();
+let uninducedSession = null;
+let inducedSession = null;
+let modelsReady = false;
+
+// ─── DOM refs ───
+const themeToggle = document.getElementById('theme-toggle');
+const mutationInput = document.getElementById('mutation-input');
+const applyBtn = document.getElementById('apply-btn');
+const resetBtn = document.getElementById('reset-btn');
+const predictBtn = document.getElementById('predict-btn');
+const wildtypeEl = document.getElementById('wildtype-seq');
+const mutatedEl = document.getElementById('mutated-seq');
+const mutatedCard = document.getElementById('mutated-card');
+const resultsCard = document.getElementById('results-card');
+const resultsGrid = document.getElementById('results-grid');
+const resultsLoading = document.getElementById('results-loading');
+const mutCount = document.getElementById('mut-count');
+const toastEl = document.getElementById('toast');
+const dotUninduced = document.getElementById('dot-uninduced');
+const dotInduced = document.getElementById('dot-induced');
+
+// ─── Theme ───
+function getTheme() { return localStorage.getItem('gfp-theme') || 'light'; }
+function setTheme(theme) {
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+  themeToggle.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+  localStorage.setItem('gfp-theme', theme);
+}
+themeToggle.addEventListener('click', () => {
+  setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+});
+setTheme(getTheme());
+
+// ─── Sequences ───
+function formatSeq(seq, diffs) {
+  const lines = [];
+  for (let lineStart = 0; lineStart < 253; lineStart += 50) {
+    const end = Math.min(lineStart + 50, 253);
+    const lineNum = lineStart + 1;
+    let html = '<div class="seq-line">';
+    html += `<span class="seq-num">${lineNum}</span>`;
+    html += '<div class="seq-bases">';
+    for (let i = lineStart; i < end; i += 10) {
+      html += '<span class="seq-block">';
+      for (let j = i; j < Math.min(i + 10, end); j++) {
+        const base = seq[j];
+        const isDiff = diffs && diffs.has(j);
+        const cls = BASE_CLASS[base] || '';
+        const diffCls = isDiff ? ' diff' : '';
+        const tooltip = isDiff ? ` data-tip="WT: ${WT_SEQ[j]}"` : '';
+        html += `<span class="seq-base ${cls}${diffCls}" data-pos="${j}"${tooltip}>`;
+        html += base;
+        html += '</span>';
+      }
+      html += '</span>';
+    }
+    html += '</div></div>';
+    lines.push(html);
+  }
+  return lines.join('');
+}
+
+function renderSequences() {
+  wildtypeEl.innerHTML = formatSeq(WT_SEQ, null);
+  const diffs = new Set();
+  const mutSeqArr = currentSeq.split('');
+  for (let i = 0; i < 253; i++) {
+    if (mutSeqArr[i] !== WT_SEQ[i]) diffs.add(i);
+  }
+  diffPositions = diffs;
+
+  if (diffs.size > 0) {
+    mutatedCard.style.display = 'block';
+    mutatedEl.innerHTML = formatSeq(currentSeq, diffs);
+    mutCount.textContent = `(${diffs.size} mutation${diffs.size > 1 ? 's' : ''})`;
+  } else {
+    mutatedCard.style.display = 'none';
+  }
+
+  // Attach click listeners to all bases
+  document.querySelectorAll('#wildtype-seq .seq-base, #mutated-seq .seq-base').forEach(el => {
+    el.addEventListener('click', (e) => {
+      const pos = parseInt(el.dataset.pos);
+      showBasePicker(e, pos, el);
+    });
+  });
+}
+
+// ─── Base picker (click to mutate) ───
+let activePicker = null;
+function showBasePicker(event, pos, targetEl) {
+  if (activePicker) activePicker.remove();
+  const picker = document.createElement('div');
+  picker.className = 'base-picker active';
+  picker.style.position = 'absolute';
+  const rect = targetEl.getBoundingClientRect();
+  picker.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  picker.style.left = (rect.left + rect.width / 2 + window.scrollX) + 'px';
+  picker.style.transform = 'translateX(-50%)';
+
+  BASES.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'base-option ' + BASE_CLASS[b];
+    btn.textContent = b;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentSeq[pos] !== b) {
+        const arr = currentSeq.split('');
+        arr[pos] = b;
+        currentSeq = arr.join('');
+        renderSequences();
+        updatePredictButton();
+      }
+      picker.remove();
+      activePicker = null;
+    });
+    picker.appendChild(btn);
+  });
+  document.body.appendChild(picker);
+  activePicker = picker;
+
+  const close = (e) => {
+    if (!picker.contains(e.target) && e.target !== targetEl) {
+      picker.remove();
+      activePicker = null;
+      document.removeEventListener('click', close);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', close), 0);
+}
+
+// ─── Apply mutations ───
+function parseMutation(mutStr) {
+  mutStr = mutStr.trim().toUpperCase();
+  const m = mutStr.match(/^([ACGT])(\d+)([ACGT])$/);
+  if (!m) return null;
+  return { origBase: m[1], pos: parseInt(m[2]) - 1, newBase: m[3] };
+}
+
+function applyMutations(input) {
+  const seq = currentSeq.split('');
+  const parts = input.split(',').map(s => s.trim()).filter(Boolean);
+  const errors = [];
+  let applied = 0;
+
+  for (const part of parts) {
+    const mut = parseMutation(part);
+    if (!mut) { errors.push(`"${part}" — use format like A52T`); continue; }
+    if (mut.pos < 0 || mut.pos >= 253) { errors.push(`"${part}" — position out of range (1-253)`); continue; }
+    if (seq[mut.pos] !== mut.origBase) { errors.push(`"${part}" — expected ${mut.origBase} at position ${mut.pos+1}, found ${seq[mut.pos]}`); continue; }
+    seq[mut.pos] = mut.newBase;
+    applied++;
+  }
+
+  currentSeq = seq.join('');
+  renderSequences();
+  updatePredictButton();
+
+  if (errors.length > 0) {
+    showToast(errors.join(' | '), 5000);
+  }
+  if (applied === 0 && errors.length > 0) {
+    currentSeq = WT_SEQ.split('').join('');
+    renderSequences();
+    updatePredictButton();
+  }
+  return errors.length === 0;
+}
+
+applyBtn.addEventListener('click', () => {
+  const input = mutationInput.value.trim();
+  if (!input) { showToast('Enter at least one mutation.', 2000); return; }
+  applyMutations(input);
+});
+
+mutationInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') applyBtn.click();
+});
+
+resetBtn.addEventListener('click', () => {
+  currentSeq = WT_SEQ;
+  mutationInput.value = '';
+  renderSequences();
+  updatePredictButton();
+  resultsCard.style.display = 'none';
+});
+
+// ─── One-hot encode ───
+function oneHotEncode(seq) {
+  const map = { A: 0, C: 1, G: 2, T: 3 };
+  const data = new Float32Array(1 * 1 * 253 * 4);
+  for (let i = 0; i < Math.min(seq.length, 253); i++) {
+    const idx = map[seq[i]];
+    if (idx !== undefined) data[i * 4 + idx] = 1.0;
+  }
+  return data;
+}
+
+function softmax(logits) {
+  const max = Math.max(...logits);
+  const exps = logits.map(x => Math.exp(x - max));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  return exps.map(x => x / sum);
+}
+
+// ─── ONNX models ───
+async function loadModel(url, dotEl) {
+  try {
+    dotEl.className = 'model-dot loading';
+    const session = await ort.InferenceSession.create(url, {
+      executionProviders: ['wasm'],
+      graphOptimizationLevel: 'all',
+    });
+    dotEl.className = 'model-dot ready';
+    return session;
+  } catch (err) {
+    dotEl.className = 'model-dot error';
+    console.error('Failed to load', url, err);
+    throw err;
+  }
+}
+
+async function loadModels() {
+  try {
+    const [uninduced, induced] = await Promise.all([
+      loadModel('./models/uninduced.onnx', dotUninduced),
+      loadModel('./models/induced.onnx', dotInduced),
+    ]);
+    uninducedSession = uninduced;
+    inducedSession = induced;
+    modelsReady = true;
+    updatePredictButton();
+    showToast('Both models loaded successfully!', 2000);
+  } catch (err) {
+    showToast('Failed to load one or both models. Check console for details.', 5000);
+  }
+}
+
+// ─── Predict ───
+async function runInference(session, seq) {
+  const data = oneHotEncode(seq);
+  const tensor = new ort.Tensor('float32', data, [1, 1, 253, 4]);
+  const feeds = { input: tensor };
+  const results = await session.run(feeds);
+  const logits = Array.from(results.output.data);
+  return softmax(logits);
+}
+
+function getBarClass(pct) {
+  if (pct >= 70) return 'high';
+  if (pct >= 40) return 'medium';
+  return 'low';
+}
+
+function renderResults(probsUninduced, probsInduced) {
+  const uninducedLabels = ['Low (bin 1)', 'High (bin 4)'];
+  const inducedLabels = ['Low (bin 1)', 'Medium (bin 2/3)', 'High (bin 4)'];
+  const uninducedConfig = { num_classes: 2, label: 'UNINDUCED', cond: 'no arabinose', labels: uninducedLabels };
+  const inducedConfig = { num_classes: 3, label: 'INDUCED', cond: '+ arabinose', labels: inducedLabels };
+
+  resultsGrid.innerHTML = '';
+
+  [ { probs: probsUninduced, config: uninducedConfig },
+    { probs: probsInduced, config: inducedConfig }
+  ].forEach(({ probs, config }) => {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+
+    let html = `<h3>${config.label}</h3>`;
+    html += `<div class="cond">${config.cond}</div>`;
+
+    const maxProb = Math.max(...probs);
+    const predClass = probs.indexOf(maxProb);
+
+    probs.forEach((p, i) => {
+      const pct = (p * 100);
+      const barClass = getBarClass(pct);
+      const label = config.labels[i] || `Class ${i}`;
+      html += `<div class="prob-row">
+        <span class="prob-label">${label}</span>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar ${barClass}" style="width:${Math.max(pct, 2)}%">${pct >= 20 ? (pct.toFixed(0) + '%') : ''}</div>
+        </div>
+        <span class="prob-pct">${pct.toFixed(1)}%</span>
+      </div>`;
+    });
+
+    html += `<div class="predicted-class highlight">Predicted: ${config.labels[predClass] || 'Class ' + predClass} (${(maxProb * 100).toFixed(1)}% confidence)</div>`;
+    card.innerHTML = html;
+    resultsGrid.appendChild(card);
+  });
+
+  resultsLoading.classList.remove('active');
+  resultsLoading.style.display = 'none';
+  resultsGrid.style.display = 'grid';
+}
+
+async function predict() {
+  if (!modelsReady || !currentSeq) return;
+
+  resultsCard.style.display = 'block';
+  resultsLoading.classList.add('active');
+  resultsLoading.style.display = '';
+  resultsGrid.style.display = 'none';
+
+  try {
+    const [probsUninduced, probsInduced] = await Promise.all([
+      runInference(uninducedSession, currentSeq),
+      runInference(inducedSession, currentSeq),
+    ]);
+    renderResults(probsUninduced, probsInduced);
+  } catch (err) {
+    console.error('Prediction error:', err);
+    showToast('Prediction failed. Check console.', 3000);
+    resultsCard.style.display = 'none';
+  }
+}
+
+predictBtn.addEventListener('click', predict);
+
+function updatePredictButton() {
+  const hasChanges = currentSeq !== WT_SEQ;
+  const canPredict = modelsReady && currentSeq.length === 253;
+  predictBtn.disabled = !canPredict;
+  predictBtn.textContent = hasChanges ? 'Predict GFP Expression' : 'Predict GFP Expression (wild type)';
+}
+
+// ─── Toast ───
+let toastTimeout;
+function showToast(msg, duration) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toastEl.classList.remove('show'), duration || 2000);
+}
+
+// ─── Init ───
+renderSequences();
+updatePredictButton();
+loadModels();
+</script>
+</body>
+</html>
