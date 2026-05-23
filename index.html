@@ -351,6 +351,36 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   opacity: 0.5;
   cursor: not-allowed;
 }
+.opt-history {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.opt-history-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.opt-history-item {
+  font-size: 12px;
+  padding: 4px 0;
+  cursor: pointer;
+  color: var(--primary);
+  font-family: var(--font-mono);
+  transition: opacity 0.2s;
+}
+.opt-history-item:hover { opacity: 0.7; }
+@keyframes pulse-btn {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+#optimize-btn.searching {
+  animation: pulse-btn 1s ease-in-out infinite;
+  pointer-events: none;
+}
 #predict-btn {
   width: 100%;
   padding: 12px;
@@ -811,6 +841,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
       <div style="font-size:14px;color:var(--text-secondary);">Finding optimal variants...</div>
     </div>
     <div id="opt-results" class="opt-results" style="display:none;"></div>
+    <div id="opt-history" class="opt-history" style="display:none;"></div>
   </div>
 
   <button class="btn btn-primary" id="predict-btn" disabled>Predict GFP Expression</button>
@@ -1386,6 +1417,31 @@ optRandom.addEventListener('change', () => {
   }
 });
 
+const optSearchHistory = [];
+const MAX_HISTORY = 5;
+
+function renderOptHistory() {
+  const el = document.getElementById('opt-history');
+  if (optSearchHistory.length === 0) { el.style.display = 'none'; return; }
+  let html = '<div class="opt-history-title">Previous searches</div>';
+  optSearchHistory.forEach((entry, idx) => {
+    const label = entry.params || 'Search ' + (idx + 1);
+    html += `<div class="opt-history-item" data-idx="${idx}">${label}</div>`;
+  });
+  el.innerHTML = html;
+  el.style.display = 'block';
+  el.querySelectorAll('.opt-history-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const idx = parseInt(item.dataset.idx);
+      const entry = optSearchHistory[idx];
+      if (entry) {
+        optResults.innerHTML = entry.html;
+        optResults.style.display = 'block';
+      }
+    });
+  });
+}
+
 async function findOptimalVariants() {
   if (!modelsReady) return;
 
@@ -1448,8 +1504,10 @@ async function findOptimalVariants() {
   const realMinMut = Math.min(minMut, realMaxMut);
 
   optBtn.disabled = true;
+  optBtn.classList.add('searching');
   optLoading.classList.add('active');
   optResults.style.display = 'none';
+  optResults.innerHTML = '';
 
   const results = [];
   const seen = new Set();
@@ -1495,12 +1553,14 @@ async function findOptimalVariants() {
     }
   } finally {
     optLoading.classList.remove('active');
+    optBtn.classList.remove('searching');
     optBtn.disabled = false;
   }
 
   if (results.length === 0) {
     optResults.innerHTML = '<div class="opt-apology">No optimal variants found. Try changing the parameters (more mutations, different positions, etc.).</div>';
     optResults.style.display = 'block';
+    renderOptHistory();
     return;
   }
 
@@ -1539,6 +1599,10 @@ async function findOptimalVariants() {
 
   optResults.innerHTML = html;
   optResults.style.display = 'block';
+
+  optSearchHistory.push({ html: html, params: `${minMut}-${maxMut} mut, ${targetCount} variants` });
+  if (optSearchHistory.length > MAX_HISTORY) optSearchHistory.shift();
+  renderOptHistory();
 }
 
 optBtn.addEventListener('click', findOptimalVariants);
