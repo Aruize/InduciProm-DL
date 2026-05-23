@@ -458,6 +458,122 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   margin: 0 auto 12px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.opt-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.opt-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.opt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.opt-field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.opt-field label input[type="checkbox"] { margin: 0; }
+.opt-check-random {
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  cursor: pointer;
+  margin-top: 2px;
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+}
+.opt-field input[type="number"] {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+.opt-field input[type="text"] {
+  width: 260px;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+.opt-field input[type="text"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.opt-field input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+.opt-sites { flex: 1; min-width: 200px; }
+.opt-check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.opt-check-group label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.opt-check-group label:hover { background: var(--surface-alt); }
+.opt-check-group input:checked + span { font-weight: 600; }
+.opt-results {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.opt-result-item {
+  padding: 8px 0;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  border-bottom: 1px solid var(--border);
+}
+.opt-result-item:last-child { border-bottom: none; }
+.opt-result-item .prob-row { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.opt-result-score {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+.opt-apology {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--surface-alt);
+  border-radius: var(--radius);
+}
 .inline-spinner {
   display: inline-block;
   width: 14px; height: 14px;
@@ -616,6 +732,55 @@ header-actions { display: flex; align-items: center; gap: 12px; }
       <div id="mutated-seq"></div>
       <div id="mut-region-legend" class="region-legend"></div>
     </div>
+  </div>
+
+  <div class="card" id="optimize-card">
+    <div class="card-title">Optimal Variant Finder</div>
+    <div class="opt-controls">
+      <div class="opt-row">
+        <div class="opt-field">
+          <label>Min mutations</label>
+          <input type="number" id="opt-min" min="1" max="252" value="1">
+        </div>
+        <div class="opt-field">
+          <label>Max mutations</label>
+          <input type="number" id="opt-max" min="1" max="252" value="5">
+        </div>
+        <div class="opt-field">
+          <label>Variants to find (max 10)</label>
+          <input type="number" id="opt-count" min="1" max="10" value="5">
+        </div>
+      </div>
+      <div class="opt-row">
+        <div class="opt-field opt-sites">
+          <label>Binding sites</label>
+          <div class="opt-check-group" id="opt-sites"></div>
+          <label class="opt-check-random"><input type="checkbox" id="opt-random"> Random (ignore sites)</label>
+        </div>
+      </div>
+      <div class="opt-row">
+        <div class="opt-field opt-pos">
+          <label><input type="checkbox" id="opt-pos-enable"> Custom position range</label>
+          <input type="text" id="opt-pos-range" placeholder="e.g. 30-45, 50-200" disabled>
+        </div>
+      </div>
+      <div class="opt-row">
+        <div class="opt-field">
+          <label>Min prob Uninduced Low <span style="font-weight:400;text-transform:none;">(min 0.5, max 1)</span></label>
+          <input type="number" id="opt-thresh-un" min="0.5" max="1" step="0.05" value="0.5">
+        </div>
+        <div class="opt-field">
+          <label>Min prob Induced High <span style="font-weight:400;text-transform:none;">(min 0.5, max 1)</span></label>
+          <input type="number" id="opt-thresh-in" min="0.5" max="1" step="0.05" value="0.5">
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="optimize-btn">Find Optimal Variants</button>
+    <div class="loading-overlay" id="opt-loading">
+      <div class="spinner"></div>
+      <div style="font-size:14px;color:var(--text-secondary);">Finding optimal variants...</div>
+    </div>
+    <div id="opt-results" class="opt-results" style="display:none;"></div>
   </div>
 
   <button class="btn btn-primary" id="predict-btn" disabled>Predict GFP Expression</button>
@@ -995,6 +1160,7 @@ async function loadModels() {
     inducedSession = induced;
     modelsReady = true;
     updatePredictButton();
+    optBtn.disabled = false;
   } catch (err) {
     showToast('Failed to load one or both models. Check console for details.', 5000);
   }
@@ -1099,6 +1265,238 @@ function updatePredictButton() {
   predictBtn.textContent = 'Predict GFP Expression';
 }
 
+// ─── Optimal Variant Finder ───
+const optMin = document.getElementById('opt-min');
+const optMax = document.getElementById('opt-max');
+const optCount = document.getElementById('opt-count');
+const optSites = document.getElementById('opt-sites');
+const optPosRange = document.getElementById('opt-pos-range');
+const optPosEnable = document.getElementById('opt-pos-enable');
+const optRandom = document.getElementById('opt-random');
+const optThreshUn = document.getElementById('opt-thresh-un');
+const optThreshIn = document.getElementById('opt-thresh-in');
+const optBtn = document.getElementById('optimize-btn');
+const optLoading = document.getElementById('opt-loading');
+const optResults = document.getElementById('opt-results');
+
+optPosEnable.addEventListener('change', () => {
+  optPosRange.disabled = !optPosEnable.checked;
+  if (optPosEnable.checked) optPosRange.focus();
+});
+
+optMax.addEventListener('blur', () => {
+  let v = parseInt(optMax.value);
+  if (isNaN(v) || v < 1) optMax.value = 1;
+  else if (v > 252) optMax.value = 252;
+});
+optMax.addEventListener('input', () => {
+  if (parseInt(optMax.value) > 252) optMax.value = 252;
+});
+optMin.addEventListener('blur', () => {
+  let v = parseInt(optMin.value);
+  if (isNaN(v) || v < 1) optMin.value = 1;
+  else if (v > 252) optMin.value = 252;
+});
+optMin.addEventListener('input', () => {
+  if (parseInt(optMin.value) > 252) optMin.value = 252;
+});
+
+optCount.addEventListener('blur', () => {
+  let v = parseInt(optCount.value);
+  if (isNaN(v) || v < 1) optCount.value = 1;
+  else if (v > 10) optCount.value = 10;
+});
+optCount.addEventListener('input', () => {
+  if (parseInt(optCount.value) > 10) optCount.value = 10;
+});
+
+[optThreshUn, optThreshIn].forEach(el => {
+  el.addEventListener('blur', () => {
+    if (el.value.includes(',')) el.value = el.value.replace(',', '.');
+    let v = parseFloat(el.value);
+    if (isNaN(v) || v < 0.5) el.value = '0.5';
+    else if (v > 1) el.value = '1';
+    else el.value = v.toFixed(2);
+  });
+  el.addEventListener('input', () => {
+    if (parseFloat(el.value) > 1) el.value = '1';
+  });
+});
+
+const BASES_ALL = ['A', 'C', 'G', 'T'];
+
+REGIONS.forEach(r => {
+  const label = document.createElement('label');
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.value = r.name;
+  cb.checked = false;
+  const span = document.createElement('span');
+  span.innerHTML = r.label;
+  label.appendChild(cb);
+  label.appendChild(span);
+  optSites.appendChild(label);
+});
+
+optRandom.checked = true;
+
+async function findOptimalVariants() {
+  if (!modelsReady) return;
+
+  const minMut = Math.max(1, parseInt(optMin.value) || 1);
+  const maxMut = Math.min(252, Math.max(minMut, parseInt(optMax.value) || 1));
+  const targetCount = Math.min(Math.max(1, parseInt(optCount.value) || 5), 10);
+
+  const isRandom = optRandom.checked;
+  const isCustomPos = optPosEnable.checked;
+  const allowedSet = new Set();
+
+  if (isRandom) {
+    for (let i = 0; i < 253; i++) allowedSet.add(i);
+  } else if (isCustomPos) {
+    const rangeText = optPosRange.value.trim();
+    if (!rangeText) {
+      showToast('Enter a position range or disable custom range.', 3000);
+      return;
+    }
+    const parts = rangeText.split(',').map(s => s.trim());
+    let valid = false;
+    for (const part of parts) {
+      const m = part.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (m) {
+        const start = parseInt(m[1]);
+        const end = parseInt(m[2]);
+        if (start < 1 || end < 1) { showToast('Negative positions not allowed.', 3000); return; }
+        const s = Math.max(0, start - SEQ_OFFSET);
+        const e = Math.min(252, end - SEQ_OFFSET);
+        for (let i = s; i <= e; i++) allowedSet.add(i);
+        valid = true;
+      }
+    }
+    if (!valid) { showToast('Invalid range format. Use e.g. 30-45, 50-200.', 3000); return; }
+  } else {
+    const siteCbs = optSites.querySelectorAll('input[type="checkbox"]');
+    siteCbs.forEach(cb => {
+      if (cb.checked) {
+        for (const r of REGIONS) {
+          if (r.name === cb.value) {
+            for (let i = r.start - SEQ_OFFSET; i <= r.end - SEQ_OFFSET; i++) {
+              if (i >= 0 && i < 253) allowedSet.add(i);
+            }
+          }
+        }
+      }
+    });
+    if (allowedSet.size === 0) {
+      for (let i = 0; i < 253; i++) allowedSet.add(i);
+    }
+  }
+
+  const allowedArr = Array.from(allowedSet);
+  if (allowedArr.length === 0) {
+    showToast('No valid positions selected.', 3000);
+    return;
+  }
+
+  const realMaxMut = Math.min(maxMut, allowedArr.length);
+  const realMinMut = Math.min(minMut, realMaxMut);
+
+  optBtn.disabled = true;
+  optLoading.classList.add('active');
+  optResults.style.display = 'none';
+
+  const results = [];
+  const seen = new Set();
+  const deadline = Date.now() + 10000;
+  let attempts = 0;
+
+  try {
+    while (Date.now() < deadline && results.length < targetCount) {
+      attempts++;
+      const numMuts = realMinMut + Math.floor(Math.random() * (realMaxMut - realMinMut + 1));
+      const shuffled = [...allowedArr].sort(() => Math.random() - 0.5);
+      const positions = shuffled.slice(0, numMuts).sort((a, b) => a - b);
+
+      const seq = WT_SEQ.split('');
+      for (const pos of positions) {
+        const avail = BASES_ALL.filter(b => b !== seq[pos]);
+        seq[pos] = avail[Math.floor(Math.random() * avail.length)];
+      }
+      const variant = seq.join('');
+
+      const key = positions.join(',');
+      if (seen.has(key)) { attempts--; continue; }
+      seen.add(key);
+
+      try {
+        const [pu, pi] = await Promise.all([
+          runInference(uninducedSession, variant),
+          runInference(inducedSession, variant),
+        ]);
+        if (pu[0] <= pu[1]) continue;
+        if (pi[2] <= pi[0] || pi[2] <= pi[1]) continue;
+        const threshUn = Math.min(1, Math.max(0.5, parseFloat(optThreshUn.value) || 0.5));
+        const threshIn = Math.min(1, Math.max(0.5, parseFloat(optThreshIn.value) || 0.5));
+        if (pu[0] < threshUn) continue;
+        if (pi[2] < threshIn) continue;
+        const score = pu[0] * pi[2];
+        results.push({ seq: variant, score, pu, pi, positions });
+        results.sort((a, b) => b.score - a.score);
+        if (results.length > targetCount) results.length = targetCount;
+      } catch (e) {
+        // skip
+      }
+    }
+  } finally {
+    optLoading.classList.remove('active');
+    optBtn.disabled = false;
+  }
+
+  if (results.length === 0) {
+    optResults.innerHTML = '<div class="opt-apology">No optimal variants found. Try changing the parameters (more mutations, different positions, etc.).</div>';
+    optResults.style.display = 'block';
+    return;
+  }
+
+  let html = `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Found ${results.length} of ${targetCount} requested variants (${attempts} attempts).</div>`;
+
+  if (results.length < targetCount) {
+    html += '<div class="opt-apology">Could not find all requested variants. Try limiting the variant range (fewer positions or mutations) for a faster search.</div>';
+  }
+
+  results.forEach((r, idx) => {
+    const mutStrs = r.positions.map(p => `${WT_SEQ[p]}${p + SEQ_OFFSET}${r.seq[p]}`);
+    const lowPct = r.pu[0] * 100;
+    const highPct = r.pi[2] * 100;
+    const lowBar = lowPct >= 70 ? 'high' : lowPct >= 40 ? 'medium' : 'low';
+    const highBar = highPct >= 70 ? 'high' : highPct >= 40 ? 'medium' : 'low';
+    html += `<div class="opt-result-item">
+      <div style="flex:1">
+        <div style="font-weight:600;margin-bottom:4px;">#${idx + 1} ${mutStrs.join(', ')}</div>
+        <div class="prob-row" style="margin-bottom:2px;">
+          <span class="prob-label" style="min-width:50px;font-size:11px;">Unind Low</span>
+          <div class="prob-bar-wrap" style="height:12px;">
+            <div class="prob-bar ${lowBar}" style="width:${Math.max(lowPct, 2)}%;height:12px;font-size:8px;">${lowPct >= 20 ? lowPct.toFixed(0) + '%' : ''}</div>
+          </div>
+          <span class="prob-pct" style="width:36px;font-size:11px;">${lowPct.toFixed(1)}%</span>
+        </div>
+        <div class="prob-row" style="margin-bottom:0;">
+          <span class="prob-label" style="min-width:50px;font-size:11px;">Ind High</span>
+          <div class="prob-bar-wrap" style="height:12px;">
+            <div class="prob-bar ${highBar}" style="width:${Math.max(highPct, 2)}%;height:12px;font-size:8px;">${highPct >= 20 ? highPct.toFixed(0) + '%' : ''}</div>
+          </div>
+          <span class="prob-pct" style="width:36px;font-size:11px;">${highPct.toFixed(1)}%</span>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  optResults.innerHTML = html;
+  optResults.style.display = 'block';
+}
+
+optBtn.addEventListener('click', findOptimalVariants);
+
 // ─── Toast ───
 let toastTimeout;
 function showToast(msg, duration) {
@@ -1112,6 +1510,7 @@ function showToast(msg, duration) {
 currentBpr = calcBasesPerRow();
 renderSequences();
 updatePredictButton();
+optBtn.disabled = true;
 loadModels();
 </script>
 </body>
