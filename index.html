@@ -59,9 +59,6 @@
       <input type="text" id="mutation-input" placeholder="e.g. A81T, G132C, T229A" spellcheck="false">
       <button class="btn btn-primary" id="apply-btn">Apply</button>
     </div>
-    <div style="margin-top:6px;font-size:12px;color:var(--text-secondary);">
-      Use 1-indexed positions. Separate multiple with commas.
-    </div>
     <div style="margin-top:8px;font-size:11px;color:var(--text-secondary);font-style:italic;border-top:1px solid var(--border);padding-top:8px;">
       Batch prediction for multiple variants &mdash; coming soon
     </div>
@@ -77,8 +74,22 @@
     </div>
   </div>
 
+  <button class="btn btn-primary" id="predict-btn" disabled>Predict GFP Expression</button>
+
+  <div class="card" id="results-card" style="display:none;">
+    <div class="card-title">Prediction Results</div>
+    <div id="results-mutations" class="results-mutations"></div>
+    <div class="loading-overlay active" id="results-loading">
+      <div class="spinner"></div>
+      <div style="font-size:14px;color:var(--text-secondary);">Running inference...</div>
+    </div>
+    <div class="results-grid" id="results-grid" style="display:none;"></div>
+  </div>
+
+  <div style="margin:32px 0 16px;border-top:2px solid var(--border);padding-top:4px;"></div>
+
   <div class="card" id="optimize-card">
-    <div class="card-title">Optimal Variant Finder</div>
+    <div class="card-title">Optimal Variant Finder (Random Search)</div>
     <div class="opt-controls">
       <div class="opt-row">
         <div class="opt-field">
@@ -123,24 +134,8 @@
       </div>
     </div>
     <button class="btn btn-primary" id="optimize-btn">Find Optimal Variants</button>
-    <div class="loading-overlay" id="opt-loading">
-      <div class="spinner"></div>
-      <div style="font-size:14px;color:var(--text-secondary);">Finding optimal variants...</div>
-    </div>
     <div id="opt-results" class="opt-results" style="display:none;"></div>
     <div id="opt-history" class="opt-history" style="display:none;"></div>
-  </div>
-
-  <button class="btn btn-primary" id="predict-btn" disabled>Predict GFP Expression</button>
-
-  <div class="card" id="results-card" style="display:none;">
-    <div class="card-title">Prediction Results</div>
-    <div id="results-mutations" class="results-mutations"></div>
-    <div class="loading-overlay active" id="results-loading">
-      <div class="spinner"></div>
-      <div style="font-size:14px;color:var(--text-secondary);">Running inference...</div>
-    </div>
-    <div class="results-grid" id="results-grid" style="display:none;"></div>
   </div>
 
   <div class="toast" id="toast"></div>

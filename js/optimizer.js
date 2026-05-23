@@ -24,6 +24,7 @@ optMax.addEventListener('blur', () => {
 optMax.addEventListener('input', () => {
   if (parseInt(optMax.value) > 252) optMax.value = 252;
 });
+optMax.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
 optMin.addEventListener('blur', () => {
   let v = parseInt(optMin.value);
   if (isNaN(v) || v < 1) optMin.value = 1;
@@ -32,6 +33,7 @@ optMin.addEventListener('blur', () => {
 optMin.addEventListener('input', () => {
   if (parseInt(optMin.value) > 252) optMin.value = 252;
 });
+optMin.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
 
 optCount.addEventListener('blur', () => {
   let v = parseInt(optCount.value);
@@ -41,6 +43,7 @@ optCount.addEventListener('blur', () => {
 optCount.addEventListener('input', () => {
   if (parseInt(optCount.value) > 10) optCount.value = 10;
 });
+optCount.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
 
 [optThreshUn, optThreshIn].forEach(el => {
   el.addEventListener('blur', () => {
@@ -51,8 +54,12 @@ optCount.addEventListener('input', () => {
     else el.value = v.toFixed(2);
   });
   el.addEventListener('input', () => {
+    if (el.value.includes(',')) el.value = el.value.replace(',', '.');
+    const m = el.value.match(/^(\d+(?:\.\d{0,2})?)/);
+    if (m && m[1] !== el.value) el.value = m[1];
     if (parseFloat(el.value) > 1) el.value = '1';
   });
+  el.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
 });
 
 const BASES_ALL = ['A', 'C', 'G', 'T'];
