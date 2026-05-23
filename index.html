@@ -520,6 +520,32 @@ header-actions { display: flex; align-items: center; gap: 12px; }
   opacity: 0.4;
   cursor: not-allowed;
 }
+.opt-thresh {
+  min-width: 160px;
+}
+.opt-thresh-cond {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+  margin-bottom: 2px;
+}
+.opt-thresh-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 2px;
+}
+.opt-thresh-range {
+  font-size: 10px;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 4px;
+  opacity: 0.7;
+}
+.opt-thresh input[type="number"] {
+  width: 90px;
+}
 .opt-field input:focus {
   outline: none;
   border-color: var(--primary);
@@ -755,7 +781,7 @@ header-actions { display: flex; align-items: center; gap: 12px; }
         <div class="opt-field opt-sites">
           <label>Binding sites</label>
           <div class="opt-check-group" id="opt-sites"></div>
-          <label class="opt-check-random"><input type="checkbox" id="opt-random"> Random (ignore sites)</label>
+          <label class="opt-check-random"><input type="checkbox" id="opt-random"> Random (any site)</label>
         </div>
       </div>
       <div class="opt-row">
@@ -765,12 +791,16 @@ header-actions { display: flex; align-items: center; gap: 12px; }
         </div>
       </div>
       <div class="opt-row">
-        <div class="opt-field">
-          <label>Min prob Uninduced Low <span style="font-weight:400;text-transform:none;">(min 0.5, max 1)</span></label>
+        <div class="opt-field opt-thresh">
+          <span class="opt-thresh-cond">Uninduced</span>
+          <span class="opt-thresh-desc">Low expression confidence</span>
+          <span class="opt-thresh-range">min 0.5 &mdash; max 1</span>
           <input type="number" id="opt-thresh-un" min="0.5" max="1" step="0.05" value="0.5">
         </div>
-        <div class="opt-field">
-          <label>Min prob Induced High <span style="font-weight:400;text-transform:none;">(min 0.5, max 1)</span></label>
+        <div class="opt-field opt-thresh">
+          <span class="opt-thresh-cond">Induced</span>
+          <span class="opt-thresh-desc">High expression confidence</span>
+          <span class="opt-thresh-range">min 0.5 &mdash; max 1</span>
           <input type="number" id="opt-thresh-in" min="0.5" max="1" step="0.05" value="0.5">
         </div>
       </div>
@@ -1339,6 +1369,22 @@ REGIONS.forEach(r => {
 });
 
 optRandom.checked = true;
+
+optSites.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    if (cb.checked) {
+      optRandom.checked = false;
+    } else {
+      const anyChecked = Array.from(optSites.querySelectorAll('input[type="checkbox"]')).some(c => c.checked);
+      if (!anyChecked) optRandom.checked = true;
+    }
+  });
+});
+optRandom.addEventListener('change', () => {
+  if (optRandom.checked) {
+    optSites.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  }
+});
 
 async function findOptimalVariants() {
   if (!modelsReady) return;
