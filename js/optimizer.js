@@ -9,7 +9,6 @@ const optRandom = document.getElementById('opt-random');
 const optThreshUn = document.getElementById('opt-thresh-un');
 const optThreshIn = document.getElementById('opt-thresh-in');
 const optBtn = document.getElementById('optimize-btn');
-const optLoading = document.getElementById('opt-loading');
 const optResults = document.getElementById('opt-results');
 
 optPosEnable.addEventListener('change', () => {
@@ -177,17 +176,18 @@ async function findOptimalVariants() {
 
   optBtn.disabled = true;
   optBtn.classList.add('searching');
-  optLoading.classList.add('active');
-  optResults.style.display = 'none';
-  optResults.innerHTML = '';
+  optResults.innerHTML = '<div style="text-align:center;padding:24px;"><div class="opt-pulse-container"><div class="opt-pulse-ring"></div><div class="opt-pulse-ring"></div><div class="opt-pulse-ring"></div></div><div class="opt-loading-text">Finding optimal variants...</div></div>';
+  optResults.style.display = 'block';
 
   const results = [];
   const seen = new Set();
   const deadline = Date.now() + 10000;
   let attempts = 0;
+  let yieldCounter = 0;
 
   try {
     while (Date.now() < deadline && results.length < targetCount) {
+      if (++yieldCounter % 5 === 0) await new Promise(r => setTimeout(r, 0));
       attempts++;
       const numMuts = realMinMut + Math.floor(Math.random() * (realMaxMut - realMinMut + 1));
       const shuffled = [...allowedArr].sort(() => Math.random() - 0.5);
@@ -201,7 +201,7 @@ async function findOptimalVariants() {
       const variant = seq.join('');
 
       const key = positions.join(',');
-      if (seen.has(key)) { attempts--; continue; }
+      if (seen.has(key)) { attempts--; await new Promise(r => setTimeout(r, 0)); continue; }
       seen.add(key);
 
       try {
@@ -224,19 +224,17 @@ async function findOptimalVariants() {
       }
     }
   } finally {
-    optLoading.classList.remove('active');
     optBtn.classList.remove('searching');
     optBtn.disabled = false;
   }
 
   if (results.length === 0) {
-    optResults.innerHTML = '<div class="opt-apology">No optimal variants found. Try changing the parameters (more mutations, different positions, etc.).</div>';
+    optResults.innerHTML = '<div class="opt-apology">No optimal variants found. Please select a less restrictive configuration (more positions, lower thresholds, wider mutation range).</div>';
     optResults.style.display = 'block';
-    renderOptHistory();
     return;
   }
 
-  let html = `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Found ${results.length} of ${targetCount} requested variants (${attempts} attempts).</div>`;
+  let html = '';
 
   if (results.length < targetCount) {
     html += '<div class="opt-apology">Could not find all requested variants. Try limiting the variant range (fewer positions or mutations) for a faster search.</div>';
