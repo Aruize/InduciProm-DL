@@ -188,7 +188,7 @@ async function findOptimalVariants() {
 
   const results = [];
   const seen = new Set();
-  const deadline = Date.now() + 10000;
+  const deadline = Date.now() + 30000;
   let attempts = 0;
   let yieldCounter = 0;
 
