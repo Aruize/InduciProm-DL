@@ -66,6 +66,7 @@ const BASES_ALL = ['A', 'C', 'G', 'T'];
 
 REGIONS.forEach(r => {
   const label = document.createElement('label');
+  label.style.setProperty('--site-color', r.color);
   const cb = document.createElement('input');
   cb.type = 'checkbox';
   cb.value = r.name;
