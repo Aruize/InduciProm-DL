@@ -11,27 +11,78 @@ const optThreshIn = document.getElementById('opt-thresh-in');
 const optBtn = document.getElementById('optimize-btn');
 const optResults = document.getElementById('opt-results');
 
+function getMaxAllowedMutations() {
+  if (optRandom.checked) return 252;
+  if (optPosEnable.checked) {
+    const rangeText = optPosRange.value.trim();
+    if (!rangeText) return 252;
+    const parts = rangeText.split(',').map(s => s.trim());
+    const allowedSet = new Set();
+    for (const part of parts) {
+      const m = part.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (m) {
+        const start = parseInt(m[1]);
+        const end = parseInt(m[2]);
+        if (start >= 1 && end >= 1) {
+          const s = Math.max(0, start - SEQ_OFFSET);
+          const e = Math.min(252, end - SEQ_OFFSET);
+          for (let i = s; i <= e; i++) allowedSet.add(i);
+        }
+      }
+    }
+    return allowedSet.size || 252;
+  }
+  const siteCbs = optSites.querySelectorAll('input[type="checkbox"]');
+  let totalLen = 0;
+  let anyChecked = false;
+  siteCbs.forEach(cb => {
+    if (cb.checked) {
+      anyChecked = true;
+      for (const r of REGIONS) {
+        if (r.name === cb.value) {
+          totalLen += (r.end - r.start + 1);
+        }
+      }
+    }
+  });
+  return anyChecked ? totalLen : 252;
+}
+
+function syncMaxInput() {
+  const limit = getMaxAllowedMutations();
+  optMax.max = limit;
+  optMin.max = limit;
+  let v = parseInt(optMax.value);
+  if (isNaN(v) || v < 1) optMax.value = 1;
+  else if (v > limit) optMax.value = limit;
+  v = parseInt(optMin.value);
+  if (isNaN(v) || v < 1) optMin.value = 1;
+  else if (v > limit) optMin.value = limit;
+}
+
 optPosEnable.addEventListener('change', () => {
   optPosRange.disabled = !optPosEnable.checked;
   if (optPosEnable.checked) optPosRange.focus();
+  syncMaxInput();
 });
+optPosRange.addEventListener('blur', syncMaxInput);
 
 optMax.addEventListener('blur', () => {
   let v = parseInt(optMax.value);
   if (isNaN(v) || v < 1) optMax.value = 1;
-  else if (v > 252) optMax.value = 252;
+  else if (v > optMax.max) optMax.value = optMax.max;
 });
 optMax.addEventListener('input', () => {
-  if (parseInt(optMax.value) > 252) optMax.value = 252;
+  if (parseInt(optMax.value) > optMax.max) optMax.value = optMax.max;
 });
 optMax.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
 optMin.addEventListener('blur', () => {
   let v = parseInt(optMin.value);
   if (isNaN(v) || v < 1) optMin.value = 1;
-  else if (v > 252) optMin.value = 252;
+  else if (v > optMin.max) optMin.value = optMin.max;
 });
 optMin.addEventListener('input', () => {
-  if (parseInt(optMin.value) > 252) optMin.value = 252;
+  if (parseInt(optMin.value) > optMin.max) optMin.value = optMin.max;
 });
 optMin.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
 
@@ -79,6 +130,7 @@ REGIONS.forEach(r => {
 });
 
 optRandom.checked = true;
+syncMaxInput();
 
 optSites.querySelectorAll('input[type="checkbox"]').forEach(cb => {
   cb.addEventListener('change', () => {
@@ -88,12 +140,14 @@ optSites.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       const anyChecked = Array.from(optSites.querySelectorAll('input[type="checkbox"]')).some(c => c.checked);
       if (!anyChecked) optRandom.checked = true;
     }
+    syncMaxInput();
   });
 });
 optRandom.addEventListener('change', () => {
   if (optRandom.checked) {
     optSites.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
   }
+  syncMaxInput();
 });
 
 const optSearchHistory = [];
@@ -125,7 +179,7 @@ async function findOptimalVariants() {
   if (!modelsReady) return;
 
   const minMut = Math.max(1, parseInt(optMin.value) || 1);
-  const maxMut = Math.min(252, Math.max(minMut, parseInt(optMax.value) || 1));
+  const maxMut = Math.min(optMax.max, Math.max(minMut, parseInt(optMax.value) || 1));
   const targetCount = Math.min(Math.max(1, parseInt(optCount.value) || 5), 10);
 
   const isRandom = optRandom.checked;
