@@ -847,3 +847,23 @@ header h1 span { color: var(--primary); }
   .card { padding: 12px; }
   #mutation-input { font-size: 12px; }
 }
+
+.app-footer {
+  text-align: center;
+  padding: 24px 0 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+.footer-license {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.footer-disclaimer {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.75;
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
