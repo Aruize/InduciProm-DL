@@ -65,7 +65,7 @@ const TRANSLATIONS = {
     predictionFailed: 'Prediction failed. Check console.',
     mutationSingle: 'mutation',
     mutationPlural: 'mutations',
-    license: '\u00a9 2026 Aruize. Licensed under the MIT License.',
+    license: '\u00a9 2026 Andrea Ruiz-Escudero and Matthew M. Montemore. Licensed under the MIT License.',
     disclaimer: '<strong>Disclaimer:</strong> This tool provides computational predictions only and is not a substitute for experimental validation. All predicted outcomes must be verified through laboratory experimentation. Do not treat any predictions as confirmed experimental results.',
   },
   es: {
@@ -134,7 +134,7 @@ const TRANSLATIONS = {
     predictionFailed: 'Error en la predicci\u00f3n. Revisa la consola.',
     mutationSingle: 'mutaci\u00f3n',
     mutationPlural: 'mutaciones',
-    license: '\u00a9 2026 Aruize. Licenciado bajo la Licencia MIT.',
+    license: '\u00a9 2026 Andrea Ruiz-Escudero y Matthew M. Montemore. Licenciado bajo la Licencia MIT.',
     disclaimer: '<strong>Aviso:</strong> Esta herramienta proporciona solo predicciones computacionales y no sustituye la validaci\u00f3n experimental. Todos los resultados predichos deben ser verificados mediante experimentaci\u00f3n de laboratorio. No trates ninguna predicci\u00f3n como resultados experimentales confirmados.',
   },
   eu: {
@@ -203,7 +203,7 @@ const TRANSLATIONS = {
     predictionFailed: 'Iragarpenak huts egin du. Ikusi kontsola.',
     mutationSingle: 'mutazioa',
     mutationPlural: 'mutazioak',
-    license: '\u00a9 2026 Aruize. MIT Lizentziarekin Lizentziatua.',
+    license: '\u00a9 2026 Andrea Ruiz-Escudero eta Matthew M. Montemore. MIT Lizentziarekin Lizentziatua.',
     disclaimer: '<strong>Oharra:</strong> Tresna honek iragarpen konputazionalak baino ez ditu ematen eta ez du baliozkotze esperimentalaren ordezkoa. Aurreikusitako emaitza guztiak laborategiko esperimentazioaren bidez egiaztatu behar dira. Ez tratatu iragarpenak baieztatutako emaitza esperimental gisa.',
   }
 };
