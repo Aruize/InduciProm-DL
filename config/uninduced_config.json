@@ -1,0 +1,36 @@
+{
+    "concentration": 0.0,
+    "task": "binary_classification",
+    "num_classes": 2,
+    "label_mapping": {
+        "1": 0,
+        "4": 1
+    },
+    "display_labels": [
+        "Class 0 (Activity bin 1)",
+        "Class 1 (Activity bin 4)"
+    ],
+    "hyperparameters": {
+        "n_layers": 3,
+        "conv_filters_0": 40,
+        "conv_filters_1": 32,
+        "conv_filters_2": 19,
+        "kernel_size_0": 3,
+        "kernel_size_1": 3,
+        "kernel_size_2": 7,
+        "dropout": 0.3272028782108745,
+        "lr": 0.0008434700294311125,
+        "weight_decay": 3.315310761650725e-05,
+        "batch_size": 16
+    },
+    "conv_filters": [
+        40,
+        32,
+        19
+    ],
+    "kernel_sizes": [
+        3,
+        3,
+        7
+    ]
+}
