@@ -449,29 +449,6 @@ function showToast(msg, duration) {
   toastTimeout = setTimeout(() => toastEl.classList.remove('show'), duration || 2000);
 }
 
-// ─── Language ───
-const langSelect = document.getElementById('lang-select');
-langSelect.addEventListener('change', (e) => {
-  setLanguage(e.target.value);
-  if (resultsCard.style.display !== 'none') {
-    predictBtn.click();
-  }
-  if (typeof renderOptHistory === 'function') {
-    document.getElementById('opt-history').style.display = 'none';
-    if (optResults.style.display !== 'none') {
-      const msg = document.createElement('div');
-      msg.className = 'opt-apology';
-      msg.textContent = t('findingOptimal');
-      optResults.innerHTML = '';
-      optResults.appendChild(msg);
-    }
-  }
-});
-// Apply saved language on init
-if (typeof setLanguage === 'function') {
-  setLanguage(currentLang);
-}
-
 // ─── Init ───
 currentBpr = calcBasesPerRow();
 renderSequences();

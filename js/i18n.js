@@ -1,5 +1,3 @@
-const LANG_STORAGE_KEY = 'gfp-lang';
-
 const TRANSLATIONS = {
   en: {
     title: 'GFP Expression Predictor',
@@ -71,8 +69,8 @@ const TRANSLATIONS = {
     disclaimer: '<strong>Disclaimer:</strong> This tool provides computational predictions only and is not a substitute for experimental validation. All predicted outcomes must be verified through laboratory experimentation. Do not treat any predictions as confirmed experimental results.',
   },
   es: {
-    title: 'GFP Expression Predictor',
-    appTitle: 'Expression Predictor',
+    title: 'Predictor de Expresi\u00f3n de GFP',
+    appTitle: 'Predictor de Expresi\u00f3n',
     themeDark: 'Modo Oscuro',
     themeLight: 'Modo Claro',
     promoter: 'Promotor',
@@ -140,8 +138,8 @@ const TRANSLATIONS = {
     disclaimer: '<strong>Aviso:</strong> Esta herramienta proporciona solo predicciones computacionales y no sustituye la validaci\u00f3n experimental. Todos los resultados predichos deben ser verificados mediante experimentaci\u00f3n de laboratorio. No trates ninguna predicci\u00f3n como resultados experimentales confirmados.',
   },
   eu: {
-    title: 'GFP Expression Predictor',
-    appTitle: 'Expression Predictor',
+    title: 'GFP Adierazpenaren Prediktorea',
+    appTitle: 'Adierazpenaren Prediktorea',
     themeDark: 'Modu Iluna',
     themeLight: 'Modu Argia',
     promoter: 'Promotorea',
@@ -210,7 +208,7 @@ const TRANSLATIONS = {
   }
 };
 
-let currentLang = localStorage.getItem(LANG_STORAGE_KEY) || 'en';
+let currentLang = localStorage.getItem('gfp-lang') || 'en';
 
 function t(key, ...args) {
   const lang = TRANSLATIONS[currentLang];
@@ -226,7 +224,7 @@ function t(key, ...args) {
 function setLanguage(lang) {
   if (!TRANSLATIONS[lang]) return;
   currentLang = lang;
-  localStorage.setItem(LANG_STORAGE_KEY, lang);
+  localStorage.setItem('gfp-lang', lang);
   applyLanguage();
 }
 
@@ -250,10 +248,36 @@ function applyLanguage() {
   });
   document.title = t('title');
   if (typeof themeToggle !== 'undefined' && themeToggle) {
-    const theme = getTheme();
+    const theme = (typeof getTheme === 'function') ? getTheme() : 'light';
     themeToggle.textContent = theme === 'dark' ? t('themeLight') : t('themeDark');
   }
   if (typeof updatePredictButton === 'function') updatePredictButton();
   const langSelect = document.getElementById('lang-select');
   if (langSelect) langSelect.value = currentLang;
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  const savedLang = localStorage.getItem('gfp-lang') || 'en';
+  if (TRANSLATIONS[savedLang]) {
+    currentLang = savedLang;
+    applyLanguage();
+  }
+  const langSelect = document.getElementById('lang-select');
+  if (langSelect) {
+    langSelect.value = currentLang;
+    langSelect.addEventListener('change', function(e) {
+      setLanguage(e.target.value);
+      const resultsCard = document.getElementById('results-card');
+      const predictBtn = document.getElementById('predict-btn');
+      if (resultsCard && resultsCard.style.display !== 'none' && predictBtn && !predictBtn.disabled) {
+        predictBtn.click();
+      }
+      const optResults = document.getElementById('opt-results');
+      const optHistory = document.getElementById('opt-history');
+      if (optHistory) optHistory.style.display = 'none';
+      if (optResults && optResults.style.display !== 'none') {
+        optResults.innerHTML = '<div class="opt-apology">' + t('findingOptimal') + '</div>';
+      }
+    });
+  }
+});
