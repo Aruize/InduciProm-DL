@@ -158,7 +158,9 @@ function renderOptHistory() {
   if (optSearchHistory.length === 0) { el.style.display = 'none'; return; }
   let html = '<div class="opt-history-title">' + t('previousSearches') + '</div>';
   optSearchHistory.forEach((entry, idx) => {
-    const label = entry.params || t('search') + ' ' + (idx + 1);
+    const label = entry.minMut !== undefined
+      ? entry.minMut + '-' + entry.maxMut + ' ' + t('mut') + ', ' + entry.targetCount + ' ' + t('variantCount')
+      : t('search') + ' ' + (idx + 1);
     html += `<div class="opt-history-item" data-idx="${idx}">${label}</div>`;
   });
   el.innerHTML = html;
@@ -332,7 +334,7 @@ async function findOptimalVariants() {
   optResults.innerHTML = html;
   optResults.style.display = 'block';
 
-  optSearchHistory.push({ html: html, params: `${minMut}-${maxMut} mut, ${targetCount} variants` });
+  optSearchHistory.push({ html: html, minMut, maxMut, targetCount });
   if (optSearchHistory.length > MAX_HISTORY) optSearchHistory.shift();
   renderOptHistory();
 }

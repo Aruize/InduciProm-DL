@@ -63,6 +63,8 @@ const TRANSLATIONS = {
     expectedFound: 'expected {0} at position {1}, found {2}',
     modelLoadError: 'Failed to load one or both models. Check console for details.',
     predictionFailed: 'Prediction failed. Check console.',
+    mut: 'mut',
+    variantCount: 'variants',
     mutationSingle: 'mutation',
     mutationPlural: 'mutations',
     license: '\u00a9 2026 Andrea Ruiz-Escudero and Matthew M. Montemore. Licensed under the MIT License.',
@@ -132,6 +134,8 @@ const TRANSLATIONS = {
     expectedFound: 'se esperaba {0} en la posici\u00f3n {1}, se encontr\u00f3 {2}',
     modelLoadError: 'Error al cargar uno o ambos modelos. Revisa la consola para m\u00e1s detalles.',
     predictionFailed: 'Error en la predicci\u00f3n. Revisa la consola.',
+    mut: 'mut',
+    variantCount: 'variantes',
     mutationSingle: 'mutaci\u00f3n',
     mutationPlural: 'mutaciones',
     license: '\u00a9 2026 Andrea Ruiz-Escudero y Matthew M. Montemore. Licenciado bajo la Licencia MIT.',
@@ -201,6 +205,8 @@ const TRANSLATIONS = {
     expectedFound: '{0} espero zen {1} posizioan, {2} aurkitu da',
     modelLoadError: 'Ezin izan dira modeloak kargatu. Ikusi kontsola xehetasunetarako.',
     predictionFailed: 'Iragarpenak huts egin du. Ikusi kontsola.',
+    mut: 'mut',
+    variantCount: 'aldaerak',
     mutationSingle: 'mutazioa',
     mutationPlural: 'mutazioak',
     license: '\u00a9 2026 Andrea Ruiz-Escudero eta Matthew M. Montemore. MIT Lizentziarekin Lizentziatua.',
@@ -267,14 +273,13 @@ document.addEventListener('DOMContentLoaded', function() {
     langSelect.value = currentLang;
     langSelect.addEventListener('change', function(e) {
       setLanguage(e.target.value);
+      if (typeof renderOptHistory === 'function') renderOptHistory();
       const resultsCard = document.getElementById('results-card');
       const predictBtn = document.getElementById('predict-btn');
       if (resultsCard && resultsCard.style.display !== 'none' && predictBtn && !predictBtn.disabled) {
         predictBtn.click();
       }
       const optResults = document.getElementById('opt-results');
-      const optHistory = document.getElementById('opt-history');
-      if (optHistory) optHistory.style.display = 'none';
       if (optResults && optResults.style.display !== 'none') {
         optResults.innerHTML = '<div class="opt-apology">' + t('findingOptimal') + '</div>';
       }
