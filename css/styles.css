@@ -87,6 +87,21 @@ header h1 span { color: var(--primary); }
   transition: background 0.2s;
 }
 #theme-toggle:hover { background: var(--surface-alt); }
+.lang-select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+.lang-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
 .card {
   background: var(--surface);
   border: 1px solid var(--border);

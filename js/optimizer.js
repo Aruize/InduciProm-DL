@@ -156,9 +156,9 @@ const MAX_HISTORY = 5;
 function renderOptHistory() {
   const el = document.getElementById('opt-history');
   if (optSearchHistory.length === 0) { el.style.display = 'none'; return; }
-  let html = '<div class="opt-history-title">Previous searches</div>';
+  let html = '<div class="opt-history-title">' + t('previousSearches') + '</div>';
   optSearchHistory.forEach((entry, idx) => {
-    const label = entry.params || 'Search ' + (idx + 1);
+    const label = entry.params || t('search') + ' ' + (idx + 1);
     html += `<div class="opt-history-item" data-idx="${idx}">${label}</div>`;
   });
   el.innerHTML = html;
@@ -191,7 +191,7 @@ async function findOptimalVariants() {
   } else if (isCustomPos) {
     const rangeText = optPosRange.value.trim();
     if (!rangeText) {
-      showToast('Enter a position range or disable custom range.', 3000);
+      showToast(t('enterRange'), 3000);
       return;
     }
     const parts = rangeText.split(',').map(s => s.trim());
@@ -201,14 +201,14 @@ async function findOptimalVariants() {
       if (m) {
         const start = parseInt(m[1]);
         const end = parseInt(m[2]);
-        if (start < 1 || end < 1) { showToast('Negative positions not allowed.', 3000); return; }
+        if (start < 1 || end < 1) { showToast(t('negPositions'), 3000); return; }
         const s = Math.max(0, start - SEQ_OFFSET);
         const e = Math.min(252, end - SEQ_OFFSET);
         for (let i = s; i <= e; i++) allowedSet.add(i);
         valid = true;
       }
     }
-    if (!valid) { showToast('Invalid range format. Use e.g. 30-45, 50-200.', 3000); return; }
+    if (!valid) { showToast(t('invalidRange'), 3000); return; }
   } else {
     const siteCbs = optSites.querySelectorAll('input[type="checkbox"]');
     siteCbs.forEach(cb => {
@@ -229,7 +229,7 @@ async function findOptimalVariants() {
 
   const allowedArr = Array.from(allowedSet);
   if (allowedArr.length === 0) {
-    showToast('No valid positions selected.', 3000);
+    showToast(t('noPositions'), 3000);
     return;
   }
 
@@ -238,7 +238,7 @@ async function findOptimalVariants() {
 
   optBtn.disabled = true;
   optBtn.classList.add('searching');
-  optResults.innerHTML = '<div style="text-align:center;padding:24px;"><div class="opt-pulse-container"><div class="opt-pulse-ring"></div><div class="opt-pulse-ring"></div><div class="opt-pulse-ring"></div></div><div class="opt-loading-text">Finding optimal variants...</div></div>';
+  optResults.innerHTML = '<div style="text-align:center;padding:24px;"><div class="opt-pulse-container"><div class="opt-pulse-ring"></div><div class="opt-pulse-ring"></div><div class="opt-pulse-ring"></div></div><div class="opt-loading-text">' + t('findingOptimal') + '</div></div>';
   optResults.style.display = 'block';
 
   const results = [];
@@ -291,7 +291,7 @@ async function findOptimalVariants() {
   }
 
   if (results.length === 0) {
-    optResults.innerHTML = '<div class="opt-apology">No optimal variants found. Please select a less restrictive configuration (more positions, lower thresholds, wider mutation range).</div>';
+    optResults.innerHTML = '<div class="opt-apology">' + t('noOptimalFound') + '</div>';
     optResults.style.display = 'block';
     return;
   }
@@ -299,7 +299,7 @@ async function findOptimalVariants() {
   let html = '';
 
   if (results.length < targetCount) {
-    html += '<div class="opt-apology">Could not find all requested variants. Try limiting the variant range (fewer positions or mutations) for a faster search.</div>';
+    html += '<div class="opt-apology">' + t('notAllVariants') + '</div>';
   }
 
   results.forEach((r, idx) => {
@@ -312,14 +312,14 @@ async function findOptimalVariants() {
       <div style="flex:1">
         <div style="font-weight:600;margin-bottom:4px;">#${idx + 1} ${mutStrs.join(', ')}</div>
         <div class="prob-row" style="margin-bottom:2px;">
-          <span class="prob-label" style="min-width:50px;font-size:11px;">Unind Low</span>
+          <span class="prob-label" style="min-width:50px;font-size:11px;">${t('unindLow')}</span>
           <div class="prob-bar-wrap" style="height:12px;">
             <div class="prob-bar ${lowBar}" style="width:${Math.max(lowPct, 2)}%;height:12px;font-size:8px;">${lowPct >= 20 ? lowPct.toFixed(0) + '%' : ''}</div>
           </div>
           <span class="prob-pct" style="width:36px;font-size:11px;">${lowPct.toFixed(1)}%</span>
         </div>
         <div class="prob-row" style="margin-bottom:0;">
-          <span class="prob-label" style="min-width:50px;font-size:11px;">Ind High</span>
+          <span class="prob-label" style="min-width:50px;font-size:11px;">${t('indHigh')}</span>
           <div class="prob-bar-wrap" style="height:12px;">
             <div class="prob-bar ${highBar}" style="width:${Math.max(highPct, 2)}%;height:12px;font-size:8px;">${highPct >= 20 ? highPct.toFixed(0) + '%' : ''}</div>
           </div>

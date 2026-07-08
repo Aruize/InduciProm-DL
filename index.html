@@ -3,50 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GFP Expression Predictor</title>
+<title data-i18n="title">GFP Expression Predictor</title>
 <link rel="stylesheet" href="css/styles.css">
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 </head>
 <body>
 <div id="app">
   <header>
-    <h1><span>GFP</span> Expression Predictor</h1>
+    <h1><span>GFP</span> <span data-i18n="appTitle">Expression Predictor</span></h1>
     <div class="header-actions">
-      <button id="theme-toggle">Dark Mode</button>
+      <select id="lang-select" class="lang-select">
+        <option value="en">English</option>
+        <option value="es">Espa\u00f1ol</option>
+        <option value="eu">Euskara</option>
+      </select>
+      <button id="theme-toggle" data-i18n="themeDark">Dark Mode</button>
     </div>
   </header>
 
   <div class="status-row">
     <div class="card promoter-card">
       <div class="promoter-select-group">
-        <label for="promoter-select">Promoter</label>
+        <label for="promoter-select" data-i18n="promoter">Promoter</label>
         <select id="promoter-select">
-          <option value="arabinose" selected>L-arabinose (pBAD)</option>
-          <option value="rhamnose" disabled>L-rhamnose (rhaBAD) &mdash; Coming soon</option>
+          <option value="arabinose" selected data-i18n="promoterBad">L-arabinose (pBAD)</option>
+          <option value="rhamnose" disabled data-i18n="promoterRha">L-rhamnose (rhaBAD) &mdash; Coming soon</option>
         </select>
       </div>
     </div>
     <div class="card model-card">
-      <div class="card-title">Model Status</div>
+      <div class="card-title" data-i18n="modelStatus">Model Status</div>
       <div class="model-status" id="model-status">
         <div class="model-status-item">
           <span class="model-dot loading" id="dot-uninduced"></span>
-          <span>UNINDUCED (0% L-arabinose)</span>
+          <span data-i18n="uninduced">UNINDUCED (0% L-arabinose)</span>
         </div>
         <div class="model-status-item">
           <span class="model-dot loading" id="dot-induced"></span>
-          <span>INDUCED (0.2% L-arabinose)</span>
+          <span data-i18n="induced">INDUCED (0.2% L-arabinose)</span>
         </div>
       </div>
     </div>
   </div>
 
   <div class="card" id="sequence-card">
-    <div class="card-title">Sequence</div>
+    <div class="card-title" data-i18n="sequence">Sequence</div>
     <div class="seq-wrapper">
       <div class="seq-header">
-        <span class="seq-label">Wild Type <span style="font-weight:400;font-size:11px;">(click a base to mutate or write the mutations below)</span></span>
-        <button class="btn btn-secondary" id="reset-btn" style="padding:4px 10px;font-size:12px;">Reset</button>
+        <span class="seq-label"><span data-i18n="wildType">Wild Type</span> <span style="font-weight:400;font-size:11px;" data-i18n="clickHint">(click a base to mutate or write the mutations below)</span></span>
+        <button class="btn btn-secondary" id="reset-btn" style="padding:4px 10px;font-size:12px;" data-i18n="reset">Reset</button>
       </div>
       <div id="wildtype-seq"></div>
       <div id="region-legend" class="region-legend"></div>
@@ -54,19 +59,19 @@
   </div>
 
   <div class="card">
-    <div class="card-title">Mutations</div>
+    <div class="card-title" data-i18n="mutations">Mutations</div>
     <div class="mutation-input-group">
-      <input type="text" id="mutation-input" placeholder="e.g. A81T, G132C, T229A" spellcheck="false">
-      <button class="btn btn-primary" id="apply-btn">Apply</button>
+      <input type="text" id="mutation-input" data-i18n-placeholder="mutationPlaceholder" placeholder="e.g. A81T, G132C, T229A" spellcheck="false">
+      <button class="btn btn-primary" id="apply-btn" data-i18n="apply">Apply</button>
     </div>
     <div style="margin-top:8px;font-size:11px;color:var(--text-secondary);font-style:italic;border-top:1px solid var(--border);padding-top:8px;">
-      Batch prediction for multiple variants &mdash; coming soon
+      <span data-i18n="batchPrediction">Batch prediction for multiple variants &mdash; coming soon</span>
     </div>
   </div>
 
   <div class="card" id="mutated-card" style="display:none;">
     <div class="seq-header">
-      <span class="seq-label">Mutated Sequence <span id="mut-count" style="font-weight:400;font-size:11px;"></span></span>
+      <span class="seq-label"><span data-i18n="mutatedSequence">Mutated Sequence</span> <span id="mut-count" style="font-weight:400;font-size:11px;"></span></span>
     </div>
     <div class="seq-wrapper">
       <div id="mutated-seq"></div>
@@ -74,14 +79,14 @@
     </div>
   </div>
 
-  <button class="btn btn-primary" id="predict-btn" disabled>Predict GFP Expression</button>
+  <button class="btn btn-primary" id="predict-btn" disabled data-i18n="predict">Predict GFP Expression</button>
 
   <div class="card" id="results-card" style="display:none;">
-    <div class="card-title">Prediction Results</div>
+    <div class="card-title" data-i18n="results">Prediction Results</div>
     <div id="results-mutations" class="results-mutations"></div>
     <div class="loading-overlay active" id="results-loading">
       <div class="spinner"></div>
-      <div style="font-size:14px;color:var(--text-secondary);">Running inference...</div>
+      <div style="font-size:14px;color:var(--text-secondary);" data-i18n="runningInference">Running inference...</div>
     </div>
     <div class="results-grid" id="results-grid" style="display:none;"></div>
   </div>
@@ -89,63 +94,64 @@
   <div style="margin:32px 0 16px;border-top:2px solid var(--border);padding-top:4px;"></div>
 
   <div class="card" id="optimize-card">
-    <div class="card-title">Optimal Variant Finder (Random Search)</div>
+    <div class="card-title" data-i18n="optimalFinder">Optimal Variant Finder (Random Search)</div>
     <div class="opt-controls">
       <div class="opt-row">
         <div class="opt-field">
-          <label>Min mutations</label>
+          <label data-i18n="minMutations">Min mutations</label>
           <input type="number" id="opt-min" min="1" max="252" value="1">
         </div>
         <div class="opt-field">
-          <label>Max mutations</label>
+          <label data-i18n="maxMutations">Max mutations</label>
           <input type="number" id="opt-max" min="1" max="252" value="5">
         </div>
         <div class="opt-field">
-          <label>Variants to find (max 10)</label>
+          <label data-i18n="variantsToFind">Variants to find (max 10)</label>
           <input type="number" id="opt-count" min="1" max="10" value="5">
         </div>
       </div>
       <div class="opt-row">
         <div class="opt-field opt-sites">
-          <label>Binding sites</label>
+          <label data-i18n="bindingSites">Binding sites</label>
           <div class="opt-check-group" id="opt-sites"></div>
-          <label class="opt-check-random"><input type="checkbox" id="opt-random"> Random (any site)</label>
+          <label class="opt-check-random"><input type="checkbox" id="opt-random"> <span data-i18n="randomAnySite">Random (any site)</span></label>
         </div>
       </div>
       <div class="opt-row">
         <div class="opt-field opt-pos">
-          <label><input type="checkbox" id="opt-pos-enable"> Custom position range</label>
-          <input type="text" id="opt-pos-range" placeholder="e.g. 30-45, 50-200" disabled>
+          <label><input type="checkbox" id="opt-pos-enable"> <span data-i18n="customPosRange">Custom position range</span></label>
+          <input type="text" id="opt-pos-range" data-i18n-placeholder="posRangePlaceholder" placeholder="e.g. 30-45, 50-200" disabled>
         </div>
       </div>
       <div class="opt-row">
         <div class="opt-field opt-thresh">
-          <span class="opt-thresh-cond">Uninduced</span>
-          <span class="opt-thresh-desc">Low expression confidence</span>
-          <span class="opt-thresh-range">min 0.5 &mdash; max 1</span>
+          <span class="opt-thresh-cond" data-i18n="uninducedShort">Uninduced</span>
+          <span class="opt-thresh-desc" data-i18n="lowExprConf">Low expression confidence</span>
+          <span class="opt-thresh-range" data-i18n="minMaxRange">min 0.5 &mdash; max 1</span>
           <input type="number" id="opt-thresh-un" min="0.5" max="1" step="0.05" value="0.5">
         </div>
         <div class="opt-field opt-thresh">
-          <span class="opt-thresh-cond">Induced</span>
-          <span class="opt-thresh-desc">High expression confidence</span>
-          <span class="opt-thresh-range">min 0.5 &mdash; max 1</span>
+          <span class="opt-thresh-cond" data-i18n="inducedShort">Induced</span>
+          <span class="opt-thresh-desc" data-i18n="highExprConf">High expression confidence</span>
+          <span class="opt-thresh-range" data-i18n="minMaxRange">min 0.5 &mdash; max 1</span>
           <input type="number" id="opt-thresh-in" min="0.5" max="1" step="0.05" value="0.5">
         </div>
       </div>
     </div>
-    <button class="btn btn-primary" id="optimize-btn">Find Optimal Variants</button>
+    <button class="btn btn-primary" id="optimize-btn" data-i18n="findOptimal">Find Optimal Variants</button>
     <div id="opt-results" class="opt-results" style="display:none;"></div>
     <div id="opt-history" class="opt-history" style="display:none;"></div>
   </div>
 
   <footer class="app-footer">
-    <div class="footer-license">&copy; 2026 Aruize. Licensed under the MIT License.</div>
-    <div class="footer-disclaimer"><strong>Disclaimer:</strong> This tool provides computational predictions only and is not a substitute for experimental validation. All predicted outcomes must be verified through laboratory experimentation. Do not treat any predictions as confirmed experimental results.</div>
+    <div class="footer-license" data-i18n-html="license">&copy; 2026 Aruize. Licensed under the MIT License.</div>
+    <div class="footer-disclaimer" data-i18n-html="disclaimer"><strong>Disclaimer:</strong> This tool provides computational predictions only and is not a substitute for experimental validation. All predicted outcomes must be verified through laboratory experimentation. Do not treat any predictions as confirmed experimental results.</div>
   </footer>
 
   <div class="toast" id="toast"></div>
 </div>
 
+<script src="js/i18n.js"></script>
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
 <script src="js/optimizer.js"></script>

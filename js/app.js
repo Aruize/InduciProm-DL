@@ -19,7 +19,7 @@ const dotInduced = document.getElementById('dot-induced');
 function getTheme() { return localStorage.getItem('gfp-theme') || 'light'; }
 function setTheme(theme) {
   document.documentElement.classList.toggle('dark', theme === 'dark');
-  themeToggle.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+  themeToggle.textContent = theme === 'dark' ? t('themeLight') : t('themeDark');
   localStorage.setItem('gfp-theme', theme);
 }
 themeToggle.addEventListener('click', () => {
@@ -110,7 +110,7 @@ function renderSequences() {
     mutatedCard.style.display = 'block';
     mutatedEl.innerHTML = formatSeq(currentSeq, diffs, currentBpr, mutMap, 'diff');
     renderLegend('mut-region-legend', MUT_HIDDEN);
-    mutCount.textContent = `(${diffs.size} mutation${diffs.size > 1 ? 's' : ''})`;
+    mutCount.textContent = `(${diffs.size} ${diffs.size > 1 ? t('mutationPlural') : t('mutationSingle')})`;
   } else {
     mutatedCard.style.display = 'none';
   }
@@ -249,9 +249,9 @@ function applyMutations(input) {
 
   for (const part of parts) {
     const mut = parseMutation(part);
-    if (!mut) { errors.push(`"${part}" \u2014 use format like A81T`); continue; }
-    if (mut.pos < 0 || mut.pos >= 253) { errors.push(`"${part}" \u2014 position out of range (${SEQ_OFFSET}-${SEQ_OFFSET + 252})`); continue; }
-    if (seq[mut.pos] !== mut.origBase) { errors.push(`"${part}" \u2014 expected ${mut.origBase} at position ${mut.pos + SEQ_OFFSET}, found ${seq[mut.pos]}`); continue; }
+    if (!mut) { errors.push(`"${part}" \u2014 ${t('formatHint')}`); continue; }
+    if (mut.pos < 0 || mut.pos >= 253) { errors.push(`"${part}" \u2014 ${t('posOutOfRange', SEQ_OFFSET, SEQ_OFFSET + 252)}`); continue; }
+    if (seq[mut.pos] !== mut.origBase) { errors.push(`"${part}" \u2014 ${t('expectedFound', mut.origBase, mut.pos + SEQ_OFFSET, seq[mut.pos])}`); continue; }
     seq[mut.pos] = mut.newBase;
     applied++;
   }
@@ -273,7 +273,7 @@ function applyMutations(input) {
 
 applyBtn.addEventListener('click', () => {
   const input = mutationInput.value.trim();
-  if (!input) { showToast('Enter at least one mutation.', 2000); return; }
+  if (!input) { showToast(t('enterMutation'), 2000); return; }
   applyMutations(input);
 });
 
@@ -336,7 +336,7 @@ async function loadModels() {
     updatePredictButton();
     optBtn.disabled = false;
   } catch (err) {
-    showToast('Failed to load one or both models. Check console for details.', 5000);
+    showToast(t('modelLoadError'), 5000);
   }
 }
 
@@ -357,10 +357,10 @@ function getBarClass(pct) {
 }
 
 function renderResults(probsUninduced, probsInduced) {
-  const uninducedLabels = ['Low', 'High'];
-  const inducedLabels = ['Low', 'Medium', 'High'];
-  const uninducedConfig = { num_classes: 2, label: 'UNINDUCED EXPRESSION', cond: '- L-arabinose', labels: uninducedLabels };
-  const inducedConfig = { num_classes: 3, label: 'INDUCED EXPRESSION', cond: '+ L-arabinose', labels: inducedLabels };
+  const uninducedLabels = [t('low'), t('high')];
+  const inducedLabels = [t('low'), t('medium'), t('high')];
+  const uninducedConfig = { num_classes: 2, label: t('uninducedExpr'), cond: t('condUninduced'), labels: uninducedLabels };
+  const inducedConfig = { num_classes: 3, label: t('inducedExpr'), cond: t('condInduced'), labels: inducedLabels };
 
   resultsGrid.innerHTML = '';
 
@@ -389,7 +389,7 @@ function renderResults(probsUninduced, probsInduced) {
       </div>`;
     });
 
-    html += `<div class="predicted-class highlight">Predicted: ${config.labels[predClass]} (${(maxProb * 100).toFixed(1)}% confidence)</div>`;
+    html += `<div class="predicted-class highlight">${t('predicted', config.labels[predClass], (maxProb * 100).toFixed(1))}</div>`;
     card.innerHTML = html;
     resultsGrid.appendChild(card);
   });
@@ -412,10 +412,11 @@ async function predict() {
     if (currentSeq[i] !== WT_SEQ[i]) muts.push(`${WT_SEQ[i]}${i + SEQ_OFFSET}${currentSeq[i]}`);
   }
   const mutsEl = document.getElementById('results-mutations');
+  const vLabel = t('variants');
   if (muts.length > 0) {
-    mutsEl.innerHTML = `<span class="mutations-label">Variants</span><span class="mutations-list">${muts.join(', ')}</span>`;
+    mutsEl.innerHTML = `<span class="mutations-label">${vLabel}</span><span class="mutations-list">${muts.join(', ')}</span>`;
   } else {
-    mutsEl.innerHTML = `<span class="mutations-label">Variants</span><span class="mutations-list">Wild type</span>`;
+    mutsEl.innerHTML = `<span class="mutations-label">${vLabel}</span><span class="mutations-list">${t('wildTypeLabel')}</span>`;
   }
 
   try {
@@ -426,7 +427,7 @@ async function predict() {
     renderResults(probsUninduced, probsInduced);
   } catch (err) {
     console.error('Prediction error:', err);
-    showToast('Prediction failed. Check console.', 3000);
+    showToast(t('predictionFailed'), 3000);
     resultsCard.style.display = 'none';
   }
 }
@@ -436,7 +437,7 @@ predictBtn.addEventListener('click', predict);
 function updatePredictButton() {
   const canPredict = modelsReady && currentSeq.length === 253;
   predictBtn.disabled = !canPredict;
-  predictBtn.textContent = 'Predict GFP Expression';
+  predictBtn.textContent = t('predict');
 }
 
 // ─── Toast ───
@@ -446,6 +447,29 @@ function showToast(msg, duration) {
   toastEl.classList.add('show');
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => toastEl.classList.remove('show'), duration || 2000);
+}
+
+// ─── Language ───
+const langSelect = document.getElementById('lang-select');
+langSelect.addEventListener('change', (e) => {
+  setLanguage(e.target.value);
+  if (resultsCard.style.display !== 'none') {
+    predictBtn.click();
+  }
+  if (typeof renderOptHistory === 'function') {
+    document.getElementById('opt-history').style.display = 'none';
+    if (optResults.style.display !== 'none') {
+      const msg = document.createElement('div');
+      msg.className = 'opt-apology';
+      msg.textContent = t('findingOptimal');
+      optResults.innerHTML = '';
+      optResults.appendChild(msg);
+    }
+  }
+});
+// Apply saved language on init
+if (typeof setLanguage === 'function') {
+  setLanguage(currentLang);
 }
 
 // ─── Init ───
